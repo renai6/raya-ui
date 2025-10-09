@@ -51,7 +51,7 @@ function RootComponent() {
           <div className="min-h-screen px-20">
             <Outlet />
 
-            <Toaster richColors position="top-center" />
+            <Toaster richColors position="top-center" duration={3000} />
           </div>
           <TanStackRouterDevtools />
         </>

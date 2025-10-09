@@ -26,6 +26,7 @@ const ItemQuantityDialog = () => {
     setEditQuantityDialogOpen(false);
   };
 
+  const selectedItemStock = selectedItem?.stock || 0;
   return (
     <Dialog
       open={isEditQuantityDialogOpen}
@@ -86,6 +87,7 @@ const ItemQuantityDialog = () => {
                     ? "bg-green-600 text-white border-green-500"
                     : "border-gray-600 text-gray-300 hover:border-green-400 hover:bg-green-900/20 bg-gray-800/50"
                 }`}
+                disabled={quantity === qty || qty > selectedItemStock}
               >
                 {qty}
               </Button>

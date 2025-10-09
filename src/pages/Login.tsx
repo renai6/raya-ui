@@ -4,7 +4,7 @@ import { useAuthActions } from "@/stores/authStore";
 import { useEffect, useState } from "react";
 
 const LoginPage = () => {
-  const loginMutation = useLogin();
+  const { mutate: login } = useLogin();
   const { restore } = useAuthActions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,12 +15,12 @@ const LoginPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate({ email, password });
+    login({ email, password });
   };
 
   return (
-    <div className="flex flex-col items-center mt-8 min-h-screen">
-      <div className="text-center mb-8 border-8 border-white-900 rounded-lg p-4">
+    <div className="flex flex-col items-center min-h-screen justify-center gap-3">
+      <div className="text-center">
         <div className="text-6xl font-bold text-primary">NY</div>
         <div className="text-3xl font-bold">RAYA</div>
       </div>

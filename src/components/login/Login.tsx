@@ -24,15 +24,15 @@ export function Login({
   handleSubmit: (e: React.FormEvent) => void;
 }) {
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Login to your account</CardTitle>
-        <CardDescription>
-          Enter your email below to login to your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form>
+    <form className="w-full max-w-sm" onSubmit={handleSubmit}>
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Login to your account</CardTitle>
+          <CardDescription>
+            Enter your email below to login to your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
@@ -58,13 +58,13 @@ export function Login({
               />
             </div>
           </div>
-        </form>
-      </CardContent>
-      <CardFooter className="flex-col gap-2">
-        <Button onClick={handleSubmit} type="submit" className="w-full">
-          Login
-        </Button>
-      </CardFooter>
-    </Card>
+        </CardContent>
+        <CardFooter className="flex-col gap-2">
+          <Button type="submit" className="w-full">
+            Login
+          </Button>
+        </CardFooter>
+      </Card>
+    </form>
   );
 }
