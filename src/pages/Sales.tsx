@@ -64,44 +64,6 @@ const Sales = () => {
           {/* Barcode Scanner */}
           <SalesBarCode products={products || []} />
 
-          {/* Current Scanned Item */}
-          {currentScannedItem && (
-            <Card className="gap-0 border-0 shadow-lg bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30 animate-in slide-in-from-top-2 duration-300">
-              <CardHeader className="pb-1">
-                <CardTitle className="flex items-center space-x-2 text-purple-300 text-lg">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Item Scanned</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg border border-purple-500/20">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white text-lg">
-                      {currentScannedItem.name}
-                    </h3>
-                    <div className="flex items-center space-x-3 mt-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-purple-600/20 text-purple-300 border-purple-500/30"
-                      >
-                        Retail
-                      </Badge>
-                      <span className="text-sm text-gray-400">
-                        #{currentScannedItem.barcode}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-400">
-                      ₱ {currentScannedItem.retailPrice.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-400">Added to cart</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Item List */}
           <Cart />
         </div>
@@ -273,6 +235,42 @@ const Sales = () => {
               )}
             </CardContent>
           </Card>
+          {currentScannedItem && (
+            <Card className="gap-0 border-0 shadow-lg bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30 animate-in slide-in-from-top-2 duration-300">
+              <CardHeader className="pb-1">
+                <CardTitle className="flex items-center space-x-2 text-purple-300 text-lg">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>Item Scanned</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg border border-purple-500/20">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white text-lg">
+                      {currentScannedItem.name}
+                    </h3>
+                    <div className="flex items-center space-x-3 mt-2">
+                      <Badge
+                        variant="secondary"
+                        className="bg-purple-600/20 text-purple-300 border-purple-500/30"
+                      >
+                        Retail
+                      </Badge>
+                      <span className="text-sm text-gray-400">
+                        #{currentScannedItem.barcode}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-400">
+                      ₱ {currentScannedItem.retailPrice.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-400">Added to cart</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
       <ItemQuantityDialog />

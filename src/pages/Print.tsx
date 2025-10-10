@@ -13,13 +13,13 @@ const Print = () => {
     const handleAfterPrint = () => {
       window.close();
     };
-    window.print();
+    if (!isLoading) window.print();
     window.addEventListener("afterprint", handleAfterPrint);
     // Clean up the event listener when the component unmounts
     return () => {
       window.removeEventListener("afterprint", handleAfterPrint);
     };
-  }, []);
+  }, [isLoading]);
 
   if (isLoading) {
     return <div>Loading...</div>;
