@@ -33,7 +33,7 @@ const Sales = () => {
   const currentScannedItem = useSalesCurrentScannedItem();
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
-  const { data: products } = useProducts();
+  const { data: productsData, isLoading } = useProducts();
   const { mutate: createSale } = useCreateSale();
   const user = useAuthUser();
 
@@ -53,16 +53,20 @@ const Sales = () => {
 
   const total = subtotal;
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="mx-auto">
       {/* Header */}
       <Header title="Sales Checkout" user={{ email: user?.email }} />
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-3">
         {/* Left Column - Barcode Input & Item List */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-3">
           {/* Barcode Scanner */}
-          <SalesBarCode products={products || []} />
+          <SalesBarCode products={productsData.products || []} />
 
           {/* Item List */}
           <Cart />
@@ -70,7 +74,7 @@ const Sales = () => {
 
         {/* Right Column - Summary Card */}
         <div className="space-y-6">
-          <Card className="border-0 shadow-lg sticky top-4 gap-1">
+          <Card className="shadow-lg sticky top-4 gap-1">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <DollarSign className="w-5 h-5 text-amber-400" />

@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import type { CartItem } from "@/types";
-import { toast } from "sonner";
 
 type CreateSaleType = {
   sales: CartItem[];
@@ -20,7 +19,6 @@ export const useCreateSale = () => {
       // Optionally refetch sales or other queries
       queryClient.invalidateQueries({ queryKey: ["sales"] });
 
-      toast.success(`Transaction Completed!`);
       window.open(`/print/${data.transaction}`, "_blank");
     },
   });

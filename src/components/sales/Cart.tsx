@@ -9,10 +9,10 @@ const Cart = () => {
   const cartItems = useSalesCartItems();
 
   return (
-    <Card className="border-0 shadow-lg gap-0">
-      <CardHeader className="pb-4">
+    <Card className="shadow-lg gap-0 mb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2 text-white">
+          <CardTitle className="flex items-center space-x-2">
             <ShoppingCart className="w-5 h-5 text-yellow-400" />
             <span>
               Items ({cartItems.reduce((sum, item) => sum + item.quantity, 0)})
@@ -31,6 +31,7 @@ const Cart = () => {
         </div>
       </CardHeader>
       <CardContent>
+        <hr className="mb-2" />
         {cartItems.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -38,7 +39,7 @@ const Cart = () => {
             <p className="text-sm">Scan a barcode to get started</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {cartItems.map((item, index) => (
               <CartItems
                 key={`${item.id}-${item.saleType}-${index}`}

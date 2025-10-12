@@ -45,7 +45,7 @@ const CartItems = (props: Props) => {
   return (
     <div
       key={`${item.id}-${item.saleType}-${index}`}
-      className={`p-4 dark:bg-zinc-800 bg-zinc-100 rounded-lg space-y-3 ${
+      className={`px-4 py-2 dark:bg-zinc-800 rounded-lg space-y-3 ${
         item.saleType === "WHOLESALE" ? "border border-amber-400" : ""
       }`}
     >
@@ -53,7 +53,7 @@ const CartItems = (props: Props) => {
       <div className="flex items-start justify-between">
         <div className="flex justify-between w-full items-center">
           <div>
-            <h3 className="font-medium text-white text-lg">{item.name}</h3>
+            <h3 className="font-medium text-lg">{item.name}</h3>
 
             <div className="flex items-center space-x-2 mt-1">
               <Badge
@@ -128,7 +128,7 @@ const CartItems = (props: Props) => {
                   variant="outline"
                   size="sm"
                   onClick={() => onUpdateQuantity(item.quantity - 1)}
-                  className="w-8 h-8 p-0 border-gray-600 text-gray-300 hover:bg-gray-600 bg-transparent"
+                  className="w-8 h-8 p-0 border-gray-600 bg-transparent"
                   disabled={item.quantity <= 1}
                 >
                   <Minus className="w-4 h-4" />
@@ -139,11 +139,11 @@ const CartItems = (props: Props) => {
                   variant="outline"
                   size="sm"
                   onClick={() => onOpenDialog()}
-                  className="min-w-[60px] h-8 border-gray-600 text-white hover:border-yellow-400 hover:bg-yellow-900/20 bg-gray-800 transition-all duration-200"
+                  className="min-w-[60px] h-8 border-gray-600 transition-all duration-200"
                 >
                   <div className="flex items-center justify-center space-x-1 user-select-none">
                     <span className="font-medium">{item?.quantity}</span>
-                    <Edit3 className="w-3 h-3 text-gray-400" />
+                    <Edit3 className="w-3 h-3" />
                   </div>
                 </Button>
 
@@ -151,7 +151,7 @@ const CartItems = (props: Props) => {
                   variant="outline"
                   size="sm"
                   onClick={() => onUpdateQuantity(item.quantity + 1)}
-                  className="w-8 h-8 p-0 border-gray-600 text-gray-300 hover:bg-gray-600 bg-transparent"
+                  className="w-8 h-8 p-0 border-gray-600 bg-transparent"
                   disabled={item.quantity + 1 > item.stock}
                 >
                   <Plus className="w-4 h-4" />
@@ -159,7 +159,7 @@ const CartItems = (props: Props) => {
               </div>
             </div>
             <div className="text-right">
-              <p className="font-bold text-white text-lg">
+              <p className="font-bold text-lg">
                 ₱{(item.selectedPrice * item.quantity).toFixed(2)}
               </p>
               <p className="text-sm text-gray-400">

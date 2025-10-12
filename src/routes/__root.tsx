@@ -34,11 +34,10 @@ function RootComponent() {
                 <Link to="/dashboard" className="[&.active]:font-bold">
                   Dashboard
                 </Link>
-                {user?.role === "ADMIN" && (
-                  <Link to="/inventory" className="[&.active]:font-bold">
-                    Inventory
-                  </Link>
-                )}
+
+                <Link to="/inventory" className="[&.active]:font-bold">
+                  Inventory
+                </Link>
 
                 <div className="flex items-center gap-2">
                   <ModeToggle />
@@ -48,7 +47,7 @@ function RootComponent() {
             </header>
           )}
 
-          <div className="min-h-screen px-20">
+          <div className="px-20">
             <Outlet />
 
             <Toaster richColors position="top-center" duration={3000} />

@@ -21,3 +21,13 @@ export interface CartItem {
   selectedPrice: number;
   saleType: SaleType;
 }
+
+export type Sale = {
+  createdAt: string;
+  id: string;
+  productId: string;
+  quantity: number;
+  saleType: SaleType;
+  total: number;
+  transactionId: string;
+};

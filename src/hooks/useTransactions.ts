@@ -13,7 +13,7 @@ export const useTransactions = () => {
 
 export const useTransactionsByDay = () => {
   return useQuery({
-    queryKey: ["transaction"],
+    queryKey: ["transaction-day"],
     queryFn: async () => {
       const response = await api.get(`/transactions/day`);
       return response.data;
@@ -23,7 +23,7 @@ export const useTransactionsByDay = () => {
 
 export const useTransactionsByYesterday = () => {
   return useQuery({
-    queryKey: ["transaction"],
+    queryKey: ["transaction-yesterday"],
     queryFn: async () => {
       const response = await api.get(`/transactions/yesterday`);
       return response.data;

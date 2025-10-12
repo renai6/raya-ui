@@ -52,7 +52,7 @@ const SalesBarCode = ({ products }: Props) => {
   };
 
   return (
-    <Card className="border-0 shadow-lg gap-0">
+    <Card className="gap-0">
       <CardHeader className="mb-1">
         <CardTitle className="flex items-center space-x-2">
           <Scan className="w-5 h-5 text-yellow-400" />

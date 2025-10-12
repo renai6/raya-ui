@@ -1,6 +1,7 @@
 import Header from "@/components/header/Header";
 import InventoryBarCode from "@/components/inventory/InventoryBarCode";
 import { Button } from "@/components/ui/button";
+import { RefreshCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -14,12 +15,19 @@ import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useCreateProduct } from "@/hooks/useCreateProduct";
 import { useProducts } from "@/hooks/useProducts";
 import { useUpdateProduct } from "@/hooks/useUpdateProduct";
@@ -28,8 +36,9 @@ import type { Product } from "@/types";
 import { useState } from "react";
 
 const Inventory = () => {
+  const [page, setPage] = useState(1);
   const user = useAuthUser();
-  const { data: products } = useProducts();
+  const { data: productsData, isLoading } = useProducts(page);
   const { mutate: createProduct } = useCreateProduct();
   const { mutate: updateProduct } = useUpdateProduct();
 
@@ -39,6 +48,11 @@ const Inventory = () => {
 
   const openAddProduct = () => {
     setIsItemAddDialogOpen(true);
+  };
+
+  const onPageChange = (newPage: number) => {
+    if (newPage === 0 || productsData.count < (newPage - 1) * 10) return;
+    setPage(newPage);
   };
 
   const [form, setForm] = useState<Product>({
@@ -92,26 +106,33 @@ const Inventory = () => {
     setIsItemAddDialogOpen(true);
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
   // Filter products based on search term
   // This is a simple client-side filter; for large datasets, consider server-side filtering
-  const filteredProducts = products?.filter((product: Product) =>
+  const filteredProducts = productsData.products?.filter((product: Product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div>
       <Header title="Inventory Management" user={{ email: user?.email }} />
+      {user?.role === "ADMIN" && (
+        <InventoryBarCode
+          products={productsData.products || []}
+          setProduct={setProduct}
+          openAddProduct={openAddProduct}
+        />
+      )}
 
-      <InventoryBarCode
-        products={products || []}
-        setProduct={setProduct}
-        openAddProduct={openAddProduct}
-      />
-
-      <Card className="mt-6 border-0 shadow-lg">
+      <Card className="mt-3 mb-4">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 justify-between">
             <span>Product List</span>
+            <Button variant="secondary" type="submit" size="sm">
+              <RefreshCcw className="w-5 h-5" />
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -121,7 +142,6 @@ const Inventory = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Table>
-            <TableCaption>A list of your recent products.</TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>Item</TableHead>
@@ -151,6 +171,27 @@ const Inventory = () => {
               ))}
             </TableBody>
           </Table>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  className="cursor-pointer"
+                  role="button"
+                  onClick={() => onPageChange(page - 1)}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink>{page}</PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  className="cursor-pointer"
+                  role="button"
+                  onClick={() => onPageChange(page + 1)}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </CardContent>
       </Card>
       <Dialog open={isItemAddDialogOpen} onOpenChange={setIsItemAddDialogOpen}>

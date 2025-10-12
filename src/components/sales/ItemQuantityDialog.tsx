@@ -34,12 +34,10 @@ const ItemQuantityDialog = () => {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-white">
+          <DialogTitle>
             Edit Quantity - {selectedItem?.name} {selectedItem?.id}
           </DialogTitle>
-          <DialogDescription>
-            This is the description of the dialog.
-          </DialogDescription>
+          <DialogDescription>Update item quantity to be sold</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -48,7 +46,7 @@ const ItemQuantityDialog = () => {
               variant="outline"
               size="sm"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 p-0 border-gray-600 text-gray-300 hover:bg-gray-600 bg-transparent"
+              className="w-10 h-10 p-0 border-gray-600 bg-transparent"
             >
               <Minus className="w-4 h-4" />
             </Button>
@@ -62,14 +60,14 @@ const ItemQuantityDialog = () => {
                 const value = Number.parseInt(e.target.value) || 1;
                 setQuantity(Math.min(Math.max(1, value), 9999));
               }}
-              className="text-center text-xl font-bold bg-gray-700 border-gray-600 text-white focus:border-yellow-400 focus:ring-yellow-400/20"
+              className="text-center text-xl font-bold"
             />
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 p-0 border-gray-600 text-gray-300 hover:bg-gray-600 bg-transparent"
+              className="w-10 h-10 p-0 border-gray-600 bg-transparent"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -84,8 +82,8 @@ const ItemQuantityDialog = () => {
                 onClick={() => setQuantity(qty)}
                 className={`h-10 transition-all duration-200 ${
                   quantity === qty
-                    ? "bg-green-600 text-white border-green-500"
-                    : "border-gray-600 text-gray-300 hover:border-green-400 hover:bg-green-900/20 bg-gray-800/50"
+                    ? "bg-green-600 border-green-500 text-white"
+                    : "border-gray-600 "
                 }`}
                 disabled={quantity === qty || qty > selectedItemStock}
               >
@@ -104,7 +102,7 @@ const ItemQuantityDialog = () => {
             <Button
               variant="outline"
               onClick={() => setEditQuantityDialogOpen(false)}
-              className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent"
+              className="flex-1 border-gray-600 bg-transparent"
             >
               Cancel
             </Button>
