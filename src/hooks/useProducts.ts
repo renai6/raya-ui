@@ -6,8 +6,7 @@ export const useProducts = (page: number = 0) => {
     queryKey: ["products", "page", page],
     queryFn: async () => {
       const response = await api.get(`/products?page=${page}`);
-
-      console.log(response.data);
+ 
       return response.data;
     },
   });

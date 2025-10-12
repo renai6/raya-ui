@@ -91,8 +91,7 @@ export const useSaleStore = create<SalesState>((set) => ({
     setCurrentScannedItem: (item: Product | null) => {
       set({ currentScannedItem: item });
     },
-    setSelectedItem: (item: CartItem | null) => {
-      console.log("Setting selected item:", item);
+    setSelectedItem: (item: CartItem | null) => { 
       set({ selectedItem: item });
     },
     clearCart: () => {
