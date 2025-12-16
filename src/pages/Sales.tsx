@@ -27,19 +27,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
-import { toast } from "sonner";
-import type { Product } from "@/types";
 import SalesBarCode from "@/components/sales/BarCode";
 
 const Sales = () => {
-  const {
-    setCashReceived,
-    clearCart,
-    setCurrentScannedItem,
-    addProductToCart,
-    setEditQuantityDialogOpen,
-    setQuantity,
-  } = useSalesActions();
+  const { setCashReceived, clearCart, setEditQuantityDialogOpen } =
+    useSalesActions();
 
   const isEditQuantityDialogOpen = useIsEditQuantityDialogOpen();
   const currentScannedItem = useSalesCurrentScannedItem();
@@ -64,7 +56,6 @@ const Sales = () => {
     const handleKeyDown = (event: KeyboardEvent) => {
       event.stopPropagation();
 
-      console.log("Key pressed:", event.code);
       if (event.code === "KeyQ") {
         if (isEditQuantityDialogOpen) return;
 
