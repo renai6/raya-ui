@@ -135,17 +135,9 @@ const CartItems = (props: Props) => {
                 </Button>
 
                 {/* Edit Quantity Dialog */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onOpenDialog()}
-                  className="min-w-[60px] h-8 border-gray-600 transition-all duration-200"
-                >
-                  <div className="flex items-center justify-center space-x-1 user-select-none">
-                    <span className="font-medium">{item?.quantity}</span>
-                    <Edit3 className="w-3 h-3" />
-                  </div>
-                </Button>
+                <div className="flex items-center justify-center space-x-1 user-select-none">
+                  <span className="font-medium">{item?.quantity}</span>
+                </div>
 
                 <Button
                   variant="outline"

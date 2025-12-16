@@ -7,6 +7,7 @@ type SalesState = {
   selectedItem: CartItem | null;
   isEditQuantityDialogOpen: boolean;
   cashReceived: number;
+  quantity: number;
   actions: {
     addProductToCart: (item: Product) => void;
     setCurrentScannedItem: (item: Product | null) => void;
@@ -17,6 +18,7 @@ type SalesState = {
     setSelectedItem: (item: CartItem | null) => void;
     setEditQuantityDialogOpen: (open: boolean) => void;
     setCashReceived: (amount: number) => void;
+    setQuantity: (amount: number) => void;
   };
 };
 
@@ -25,6 +27,7 @@ export const useSaleStore = create<SalesState>((set) => ({
   currentScannedItem: null,
   selectedItem: null,
   isEditQuantityDialogOpen: false,
+  quantity: 0,
   cashReceived: 0,
   transactionId: null,
   actions: {
@@ -35,10 +38,11 @@ export const useSaleStore = create<SalesState>((set) => ({
         );
 
         if (existingItemIndex !== -1) {
-          state.cartItems[existingItemIndex].quantity += 1;
+          state.cartItems[existingItemIndex].quantity += state.quantity;
 
           return { cartItems: state.cartItems };
         }
+
         return {
           cartItems: [
             ...state.cartItems,
@@ -50,7 +54,7 @@ export const useSaleStore = create<SalesState>((set) => ({
               retailPrice: item.retailPrice,
               wholesalePrice: item.wholesalePrice,
               barcode: item.barcode,
-              quantity: 1,
+              quantity: state.quantity || 1,
               selectedPrice: item.retailPrice,
               saleType: "RETAIL",
             },
@@ -103,6 +107,11 @@ export const useSaleStore = create<SalesState>((set) => ({
     setCashReceived: (amount: number) => {
       set({ cashReceived: amount });
     },
+    setQuantity: (number: number) => {
+      set(() => {
+        return { quantity: number };
+      });
+    },
   },
 }));
 
@@ -116,3 +125,4 @@ export const useIsEditQuantityDialogOpen = () =>
   useSaleStore((state) => state.isEditQuantityDialogOpen);
 export const useSalesCashReceived = () =>
   useSaleStore((state) => state.cashReceived);
+export const useQuantity = () => useSaleStore((state) => state.quantity);

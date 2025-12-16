@@ -1,19 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Plus, Scan } from "lucide-react";
+import { Scan } from "lucide-react";
 import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import type { Product } from "@/types";
 import { toast } from "sonner";
-import { useSalesActions } from "@/stores/sales";
+import { useQuantity, useSalesActions } from "@/stores/sales";
 
 type Props = {
   products: Product[];
+  isWaitingBarcode: boolean;
+  setIsWaitingBarcode: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const SalesBarCode = ({ products }: Props) => {
-  const { setCurrentScannedItem, addProductToCart } = useSalesActions();
-
+const SalesBarCode = ({
+  products,
+  isWaitingBarcode,
+  setIsWaitingBarcode,
+}: Props) => {
+  const { setCurrentScannedItem, addProductToCart, setQuantity } =
+    useSalesActions();
+  const quantity = useQuantity();
   const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
 
@@ -21,10 +27,10 @@ const SalesBarCode = ({ products }: Props) => {
 
   // Auto-focus barcode input
   useEffect(() => {
-    if (inputRef.current) {
+    if (inputRef.current && isWaitingBarcode) {
       inputRef.current.focus();
     }
-  }, []);
+  }, [isWaitingBarcode]);
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,22 +39,29 @@ const SalesBarCode = ({ products }: Props) => {
     const product = products.find(
       (p: Product) => p.barcode === barcodeInput.trim()
     );
+
     if (product && product.stock <= 0) {
       toast.error(`Product ${product.name} is out of stock`);
-      setBarcodeInput("");
+
+      return;
+    } else if (product && product.stock < quantity) {
+      toast.error(`Product ${product.name} only has ${product.stock} left`);
+
       return;
     } else if (product) {
       // Add directly to cart with default settings
       addProductToCart(product);
       setCurrentScannedItem(product);
+      setQuantity(0);
       // Clear the current scanned item after 3 seconds
       setTimeout(() => setCurrentScannedItem(null), 3000);
       setIsScanning(false);
     } else {
       // Handle unknown barcode
       toast.error(`Product ${barcodeInput} not found`);
-      setBarcodeInput("");
     }
+    setQuantity(0);
+    setBarcodeInput("");
   };
 
   return (
@@ -73,6 +86,7 @@ const SalesBarCode = ({ products }: Props) => {
               onChange={(e) => setBarcodeInput(e.target.value)}
               className="text-lg h-12 pr-12"
               autoComplete="off"
+              onBlur={() => setIsWaitingBarcode(false)}
             />
             {isScanning && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -80,13 +94,6 @@ const SalesBarCode = ({ products }: Props) => {
               </div>
             )}
           </div>
-          <Button
-            type="submit"
-            size="lg"
-            className="bg-green-600 hover:bg-green-700 px-6"
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
         </form>
       </CardContent>
     </Card>

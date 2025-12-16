@@ -1,11 +1,10 @@
-import SalesBarCode from "@/components/sales/BarCode";
 import Cart from "@/components/sales/Cart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useProducts } from "@/hooks/useProducts";
 import { Check, CreditCard, DollarSign, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCreateSale } from "@/hooks/useCreateSale";
 import { useAuthUser } from "@/stores/authStore";
 import {
@@ -19,6 +18,7 @@ import {
 import Header from "@/components/header/Header";
 import { Badge } from "@/components/ui/badge";
 import {
+  useIsEditQuantityDialogOpen,
   useSalesActions,
   useSalesCartItems,
   useSalesCashReceived,
@@ -27,17 +27,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
+import { toast } from "sonner";
+import type { Product } from "@/types";
+import SalesBarCode from "@/components/sales/BarCode";
 
 const Sales = () => {
-  const { setCashReceived, clearCart } = useSalesActions();
+  const {
+    setCashReceived,
+    clearCart,
+    setCurrentScannedItem,
+    addProductToCart,
+    setEditQuantityDialogOpen,
+    setQuantity,
+  } = useSalesActions();
+
+  const isEditQuantityDialogOpen = useIsEditQuantityDialogOpen();
   const currentScannedItem = useSalesCurrentScannedItem();
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
   const { data: productsData, isLoading } = useProducts();
   const { mutate: createSale } = useCreateSale();
   const user = useAuthUser();
-
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [isWaitingBarcode, setIsWaitingBarcode] = useState(true);
 
   const processPayment = async () => {
     setPaymentDialogOpen(false);
@@ -45,6 +57,53 @@ const Sales = () => {
     clearCart();
     setCashReceived(0);
   };
+
+  const cashInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      event.stopPropagation();
+
+      console.log("Key pressed:", event.code);
+      if (event.code === "KeyQ") {
+        if (isEditQuantityDialogOpen) return;
+
+        setEditQuantityDialogOpen(true);
+      }
+
+      if (event.code === "F9") {
+        if (isEditQuantityDialogOpen) return;
+
+        setIsWaitingBarcode(true);
+      }
+
+      if (event.code === "KeyC") {
+        if (isEditQuantityDialogOpen) return;
+
+        if (cashInputRef.current) {
+          cashInputRef.current.focus();
+        }
+      }
+
+      if (event.code === "KeyP") {
+        if (
+          isEditQuantityDialogOpen ||
+          cartItems.length === 0 ||
+          cashReceived < total
+        ) {
+          return;
+        }
+
+        setPaymentDialogOpen(true);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [cartItems, cashReceived, isEditQuantityDialogOpen]);
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.selectedPrice * item.quantity,
@@ -66,7 +125,11 @@ const Sales = () => {
         {/* Left Column - Barcode Input & Item List */}
         <div className="lg:col-span-2 space-y-3">
           {/* Barcode Scanner */}
-          <SalesBarCode products={productsData.products || []} />
+          <SalesBarCode
+            products={productsData.products || []}
+            isWaitingBarcode={isWaitingBarcode}
+            setIsWaitingBarcode={setIsWaitingBarcode}
+          />
 
           {/* Item List */}
           <Cart />
@@ -85,6 +148,7 @@ const Sales = () => {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Cash Received</Label>
                 <Input
+                  ref={cashInputRef}
                   className={`mb-0 ${
                     cashReceived < total && cashReceived !== 0
                       ? "border-red-400"
