@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SalesRouteImport } from './routes/sales'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrintIdRouteImport } from './routes/print.$id'
@@ -29,6 +30,11 @@ const LoginRoute = LoginRouteImport.update({
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeesRoute = EmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -50,6 +56,7 @@ const PrintIdRoute = PrintIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/sales': typeof SalesRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/sales': typeof SalesRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/sales': typeof SalesRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/employees'
     | '/inventory'
     | '/login'
     | '/sales'
     | '/print/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/inventory' | '/login' | '/sales' | '/print/$id'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/employees'
+    | '/inventory'
+    | '/login'
+    | '/sales'
+    | '/print/$id'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/employees'
     | '/inventory'
     | '/login'
     | '/sales'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  EmployeesRoute: typeof EmployeesRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   SalesRoute: typeof SalesRoute
@@ -125,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/employees': {
+      id: '/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -152,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  EmployeesRoute: EmployeesRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   SalesRoute: SalesRoute,

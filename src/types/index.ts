@@ -1,4 +1,5 @@
 export type SaleType = "RETAIL" | "WHOLESALE";
+export type TransactionPaymentType = "CASH" | "CREDIT";
 
 export interface Product {
   id?: string;
@@ -7,6 +8,16 @@ export interface Product {
   retailPrice: number;
   wholesalePrice: number;
   barcode: string;
+}
+
+export interface Employee {
+  id?: string;
+  employeeNumber: string;
+  name: string;
+  contactNumber: string;
+  email: string;
+  totalCredit?: number;
+  createdAt?: string;
 }
 
 export interface CartItem {

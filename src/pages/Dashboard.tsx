@@ -27,8 +27,31 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { Product, Sale } from "@/types";
 import Header from "@/components/header/Header";
 import { useAuthUser } from "@/stores/authStore";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { FileText } from "lucide-react";
+import { useEmployeesReport } from "@/hooks/useEmployeesReport";
+import { useProductsReport } from "@/hooks/useProductsReport";
 
 const Dashboard = () => {
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [endDate, setEndDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
   const { data: transactionsToday, isLoading: isLoadingToday } =
     useTransactionsByDay();
   const { data: transactionsYesterday, isLoading: isLoadingYesterday } =
@@ -37,8 +60,53 @@ const Dashboard = () => {
     useProductsLowStock();
   const { data: productSales, isLoading: isLoadingProductSales } =
     useProductsSaleChart();
+  const { refetch: refetchEmployeeReport } = useEmployeesReport(
+    startDate,
+    endDate
+  );
+  const { refetch: refetchProductsReport } = useProductsReport(
+    startDate,
+    endDate
+  );
 
   const user = useAuthUser();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reportType, setReportType] = useState<"inventory" | "employee">(
+    "inventory"
+  );
+
+  const generateReport = async () => {
+    try {
+      if (reportType === "inventory") {
+        const filename = `inventory-report-${Date.now()}.pdf`;
+        const { data } = await refetchProductsReport();
+        if (data) {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } else {
+        const filename = `employee-report-${Date.now()}.pdf`;
+        const { data } = await refetchEmployeeReport();
+        if (data) {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      alert("Failed to generate report. Please try again.");
+    }
+  };
 
   if (
     isLoadingToday ||
@@ -101,6 +169,89 @@ const Dashboard = () => {
   return (
     <div>
       <Header title="Dashboard" user={{ email: user?.email }} />
+      {user?.role === "ADMIN" && (
+        <div className="mb-4 flex justify-end">
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <FileText className="w-4 h-4 mr-2" />
+                Generate Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Generate PDF Report</DialogTitle>
+                <DialogDescription>
+                  Select the type of report and date to generate a PDF.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Report Type</Label>
+                  <RadioGroup
+                    value={reportType}
+                    onValueChange={(value: "inventory" | "employee") =>
+                      setReportType(value)
+                    }
+                    className="flex space-x-6 mt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="inventory" id="inventory" />
+                      <Label htmlFor="inventory">Inventory</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="employee" id="employee" />
+                      <Label htmlFor="employee">Employee</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Date Range</Label>
+                  <div className="flex space-x-2 mt-1">
+                    <div className="flex-1">
+                      <Label
+                        htmlFor="startDate"
+                        className="text-xs text-gray-600"
+                      >
+                        Start Date
+                      </Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label
+                        htmlFor="endDate"
+                        className="text-xs text-gray-600"
+                      >
+                        End Date
+                      </Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={generateReport}>Generate PDF</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
       <div className="mb-3 flex flex-col gap-3 xl:flex-row xl:justify-between">
         <Card className="w-full xl:w-1/4">
           <CardHeader>

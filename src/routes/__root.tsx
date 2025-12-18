@@ -19,7 +19,7 @@ function RootComponent() {
     <>
       {!currentPathname.includes("/print") ? (
         <>
-          {user?.email && (
+          {!!user?.email && (
             <header className="flex items-center justify-between px-20 py-8 bg-background mb-2">
               {/* Left: Logo */}
               <div className="flex items-center gap-2 cursor-pointer">
@@ -34,11 +34,16 @@ function RootComponent() {
                 <Link to="/dashboard" className="[&.active]:font-bold">
                   Dashboard
                 </Link>
-
-                <Link to="/inventory" className="[&.active]:font-bold">
-                  Inventory
-                </Link>
-
+                {user?.role === "ADMIN" && (
+                  <>
+                    <Link to="/inventory" className="[&.active]:font-bold">
+                      Inventory
+                    </Link>
+                    <Link to="/employees" className="[&.active]:font-bold">
+                      Employees
+                    </Link>
+                  </>
+                )}
                 <div className="flex items-center gap-2">
                   <ModeToggle />
                   <UserToggle />
