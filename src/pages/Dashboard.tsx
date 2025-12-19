@@ -205,40 +205,43 @@ const Dashboard = () => {
                     </div>
                   </RadioGroup>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">Date Range</Label>
-                  <div className="flex space-x-2 mt-1">
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="startDate"
-                        className="text-xs text-gray-600"
-                      >
-                        Start Date
-                      </Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="endDate"
-                        className="text-xs text-gray-600"
-                      >
-                        End Date
-                      </Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
+                {reportType === "employee" && (
+                  <div>
+                    <Label className="text-sm font-medium">Date Range</Label>
+                    <div className="flex space-x-2 mt-1">
+                      <div className="flex-1">
+                        <Label
+                          htmlFor="startDate"
+                          className="text-xs text-gray-600"
+                        >
+                          Start Date
+                        </Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label
+                          htmlFor="endDate"
+                          className="text-xs text-gray-600"
+                        >
+                          End Date
+                        </Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex justify-end space-x-2">
+                )}
+
+                <div className="flex justify-end space-x-2 mt-5">
                   <Button
                     variant="outline"
                     onClick={() => setIsModalOpen(false)}
