@@ -31,20 +31,26 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { useUpdateEmployee } from "@/hooks/useUpdateEmployee";
 import { useAuthUser } from "@/stores/authStore";
 import type { Employee } from "@/types";
+import * as XLSX from "xlsx";
 import { useState } from "react";
+import { useCreateBulkEmployees } from "@/hooks/useCreateBulkEmployees";
+import { Spinner } from "@/components/ui/spinner";
 
 const Employees = () => {
   const [page, setPage] = useState(1);
   const user = useAuthUser();
   const { data: employeesData } = useEmployees(page);
   const { mutate: createEmployee } = useCreateEmployee();
+  const { mutate: createBulkEmployees } = useCreateBulkEmployees();
   const { mutate: updateEmployee } = useUpdateEmployee();
 
   const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false);
+  const [isCreatingBulkEmployees, setIsCreatingBulkEmployees] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [fileUploaded, setFileUploaded] = useState<any[]>([]);
   const [form, setForm] = useState<Employee>({
     employeeNumber: "",
     name: "",
@@ -98,6 +104,10 @@ const Employees = () => {
     });
   };
 
+  const formHasAnyValue = Object.values(form).some(
+    (value) => value.trim() !== ""
+  );
+
   const onPageChange = (newPage: number) => {
     if (newPage === 0 || employeesData?.count < (newPage - 1) * 10) return;
     setPage(newPage);
@@ -107,6 +117,52 @@ const Employees = () => {
   const filteredEmployees = employeesData?.filter((employee: Employee) =>
     employee.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = event.target?.result;
+      const workbook = XLSX.read(data, { type: "binary" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      setFileUploaded(jsonData as any[]);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleImport = async () => {
+    if (!fileUploaded || fileUploaded.length === 0) return;
+    setIsCreatingBulkEmployees(true);
+    // Assuming first row is headers, skip it
+    const employees = fileUploaded.slice(1).map((row: any[]) => ({
+      employeeNumber: row[0]?.toString() || "",
+      name: row[1]?.toString() || "",
+      contactNumber: row[2]?.toString() || "",
+      email: row[3]?.toString() || "",
+    }));
+
+    await createBulkEmployees(employees);
+
+    setIsCreatingBulkEmployees(false);
+    setIsEmployeeDialogOpen(false);
+    setFileUploaded([]);
+  };
+
+  const onEmployeeDialogClose = () => {
+    setFileUploaded([]);
+    setForm({
+      employeeNumber: "",
+      name: "",
+      contactNumber: "",
+      email: "",
+    });
+    setIsEmployeeDialogOpen(false);
+  };
 
   return (
     <div>
@@ -136,7 +192,7 @@ const Employees = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Number</TableHead>
+                <TableHead>Employee Number</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Total Credit</TableHead>
               </TableRow>
@@ -182,7 +238,14 @@ const Employees = () => {
 
       <Dialog
         open={isEmployeeDialogOpen}
-        onOpenChange={setIsEmployeeDialogOpen}
+        onOpenChange={() =>
+          setIsEmployeeDialogOpen((prevState) => {
+            if (prevState) {
+              onEmployeeDialogClose();
+            }
+            return !prevState;
+          })
+        }
       >
         <DialogContent>
           <DialogHeader>
@@ -206,6 +269,7 @@ const Employees = () => {
                 value={form.employeeNumber}
                 onChange={handleFormChange}
                 required
+                disabled={fileUploaded.length > 0}
               />
             </div>
             <div>
@@ -218,6 +282,7 @@ const Employees = () => {
                 value={form.name}
                 onChange={handleFormChange}
                 required
+                disabled={fileUploaded.length > 0}
               />
             </div>
             <div>
@@ -230,6 +295,7 @@ const Employees = () => {
                 value={form.contactNumber}
                 onChange={handleFormChange}
                 required
+                disabled={fileUploaded.length > 0}
               />
             </div>
             <div>
@@ -243,6 +309,7 @@ const Employees = () => {
                 value={form.email}
                 onChange={handleFormChange}
                 required
+                disabled={fileUploaded.length > 0}
               />
             </div>
 
@@ -250,15 +317,47 @@ const Employees = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsEmployeeDialogOpen(false)}
+                onClick={onEmployeeDialogClose}
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={fileUploaded.length > 0}>
                 {selectedEmployee ? "Update" : "Add"}
               </Button>
             </div>
           </form>
+
+          {selectedEmployee || formHasAnyValue ? null : (
+            <>
+              <div>
+                <hr />
+              </div>
+              <div className="grid items-center gap-3 py-4">
+                <Label htmlFor="excel">
+                  Import bulk employees via Excel file
+                </Label>
+                <Input
+                  onChange={handleUpload}
+                  id="excel"
+                  type="file"
+                  accept=".xlsx,.xls"
+                />
+                <Button
+                  disabled={isCreatingBulkEmployees}
+                  onClick={handleImport}
+                >
+                  {isCreatingBulkEmployees ? (
+                    <>
+                      <Spinner />
+                      Processing
+                    </>
+                  ) : (
+                    "Import"
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

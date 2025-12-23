@@ -108,6 +108,22 @@ const Sales = () => {
     };
   }, [cartItems, cashReceived, isEditQuantityDialogOpen, paymentType]);
 
+  const onOpenPaymentDialog = () => {
+    if (cartItems.length === 0) return;
+    if (
+      paymentType === "CASH" &&
+      (cartItems.length === 0 || cashReceived < total)
+    )
+      return;
+    if (
+      paymentType === "CREDIT" &&
+      (!employee?.id || employee?.totalCredit + total > 2000)
+    )
+      return;
+
+    setPaymentDialogOpen(true);
+  };
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.selectedPrice * item.quantity,
     0
@@ -152,9 +168,11 @@ const Sales = () => {
                 <Label className="text-sm font-medium">Payment Type</Label>
                 <RadioGroup
                   value={paymentType}
-                  onValueChange={(value: "CASH" | "CREDIT") =>
-                    setPaymentType(value)
-                  }
+                  onValueChange={(value: "CASH" | "CREDIT") => {
+                    setPaymentType(value);
+                    setCashReceived(0);
+                    setEmployeeBarcode("");
+                  }}
                   className="flex space-x-6"
                 >
                   <div className="flex items-center space-x-2">
@@ -183,16 +201,26 @@ const Sales = () => {
                       setEmployeeBarcode(e.target.value);
                     }}
                     placeholder="Scan employee barcode"
-                    className="bg-gray-800 border-gray-600 text-white"
+                    className={`mb-0 ${
+                      employeeBarcode !== "" &&
+                      (employee?.totalCredit + total > 2000 || !employee?.id)
+                        ? "border-red-400"
+                        : ""
+                    }`}
                     autoFocus
                   />
-                  {!employee?.id && (
+                  {employee?.totalCredit + total > 2000 && (
+                    <small className="text-red-400">
+                      Employee exceeded credit limit
+                    </small>
+                  )}
+                  {employeeBarcode !== "" && !employee?.id && (
                     <small className="text-red-400">
                       Employee number not found
                     </small>
                   )}
                   {employee?.id && (
-                    <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3">
+                    <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
                       <div className="flex justify-between text-sm">
                         <span>Employee Number</span>
                         <span>{employeeBarcode}</span>
@@ -243,21 +271,29 @@ const Sales = () => {
                 </div>
               </div>
               <div className="space-y-3 pt-4">
-                <Button
-                  onClick={() => setPaymentDialogOpen(true)}
-                  className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
-                  disabled={
-                    cartItems.length === 0 ||
-                    (cashReceived < total && paymentType === "CASH") ||
-                    (employeeBarcode === "" &&
-                      paymentType === "CREDIT" &&
-                      !employee?.id &&
-                      employee?.totalCredit < 2000)
-                  }
-                >
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  Process Payment
-                </Button>
+                {paymentType === "CASH" ? (
+                  <Button
+                    onClick={onOpenPaymentDialog}
+                    className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
+                    disabled={cartItems.length === 0 || cashReceived < total}
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Process Payment
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={onOpenPaymentDialog}
+                    className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
+                    disabled={
+                      cartItems.length === 0 ||
+                      !employee?.id ||
+                      employee?.totalCredit + total > 2000
+                    }
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Process Payment
+                  </Button>
+                )}
               </div>
               {cartItems.length > 0 && (
                 <div className="pt-4 border-t">
@@ -274,13 +310,13 @@ const Sales = () => {
           {currentScannedItem && (
             <Card className="gap-0 border-0 shadow-lg bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30 animate-in slide-in-from-top-2 duration-300">
               <CardHeader className="pb-1">
-                <CardTitle className="flex items-center space-x-2 text-purple-300 text-lg">
+                <CardTitle className="flex items-center space-x-2 text-lg">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span>Item Scanned</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg border border-purple-500/20">
+                <div className="flex items-center justify-between p-2 bg-gray-100/50 dark:bg-gray-700/50 rounded-lg border border-gray-300/20 dark:border-purple-500/20">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white text-lg">
                       {currentScannedItem.name}
@@ -288,11 +324,11 @@ const Sales = () => {
                     <div className="flex items-center space-x-3 mt-2">
                       <Badge
                         variant="secondary"
-                        className="bg-purple-600/20 text-purple-300 border-purple-500/30"
+                        className="dark:bg-purple-600/20 dark:text-purple-300 dark:border-purple-500/30"
                       >
                         Retail
                       </Badge>
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm">
                         #{currentScannedItem.barcode}
                       </span>
                     </div>
@@ -301,7 +337,7 @@ const Sales = () => {
                     <p className="text-2xl font-bold text-green-400">
                       ₱ {currentScannedItem.retailPrice.toFixed(2)}
                     </p>
-                    <p className="text-sm text-gray-400">Added to cart</p>
+                    <p className="text-sm">Added to cart</p>
                   </div>
                 </div>
               </CardContent>
@@ -416,19 +452,19 @@ const Sales = () => {
               {/* Action Buttons */}
               <div className="flex space-x-3">
                 <Button
-                  onClick={processPayment}
-                  className="flex-1 bg-green-600 hover:bg-green-700 h-12 text-lg font-semibold"
-                >
-                  <Check className="w-5 h-5 mr-2" />
-                  Confirm Payment
-                </Button>
-                <Button
                   variant="outline"
                   onClick={() => setPaymentDialogOpen(false)}
                   className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent h-12"
                 >
                   <X className="w-5 h-5 mr-2" />
                   Cancel
+                </Button>
+                <Button
+                  onClick={processPayment}
+                  className="flex-1 bg-green-600 hover:bg-green-700 h-12 text-lg font-semibold"
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  Confirm Payment
                 </Button>
               </div>
             </div>

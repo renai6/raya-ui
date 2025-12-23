@@ -65,7 +65,7 @@ const CartItems = (props: Props) => {
               >
                 {item.saleType === "WHOLESALE" ? "Wholesale" : "Retail"}
               </Badge>
-              <span className="text-sm text-gray-400">#{item.barcode}</span>
+              <span className="text-sm">#{item.barcode}</span>
             </div>
           </div>
 
@@ -154,9 +154,7 @@ const CartItems = (props: Props) => {
               <p className="font-bold text-lg">
                 ₱{(item.selectedPrice * item.quantity).toFixed(2)}
               </p>
-              <p className="text-sm text-gray-400">
-                ₱{item.selectedPrice.toFixed(2)} each
-              </p>
+              <small>₱{item.selectedPrice.toFixed(2)} each</small>
             </div>
             <div className="flex gap-2">
               <Button
