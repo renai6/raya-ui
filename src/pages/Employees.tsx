@@ -114,9 +114,11 @@ const Employees = () => {
   };
 
   // Filter employees based on search term
-  const filteredEmployees = employeesData?.filter((employee: Employee) =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = Array.isArray(employeesData)
+    ? employeesData.filter((employee: Employee) =>
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

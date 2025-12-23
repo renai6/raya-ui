@@ -111,9 +111,11 @@ const Inventory = () => {
   }
   // Filter products based on search term
   // This is a simple client-side filter; for large datasets, consider server-side filtering
-  const filteredProducts = productsData.products?.filter((product: Product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = Array.isArray(productsData?.products)
+    ? productsData.products.filter((product: Product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   return (
     <div>

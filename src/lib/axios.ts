@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: `${import.meta.env.VITE_API_URL}/api`,
 });
 
 // Interceptor to attach Bearer token

@@ -1,6 +1,6 @@
 import type { CartItem } from "@/types";
 import { Button } from "../ui/button";
-import { Edit3, Minus, Plus, TicketPercent, Trash2 } from "lucide-react";
+import { Minus, Plus, TicketPercent, Trash2 } from "lucide-react";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Badge } from "../ui/badge";
@@ -17,13 +17,7 @@ type Props = {
 };
 
 const CartItems = (props: Props) => {
-  const {
-    updatePriceType,
-    updateQuantity,
-    removeItem,
-    setEditQuantityDialogOpen,
-    setSelectedItem,
-  } = useSalesActions();
+  const { updatePriceType, updateQuantity, removeItem } = useSalesActions();
 
   const { item, index } = props;
 
@@ -35,11 +29,6 @@ const CartItems = (props: Props) => {
     }
 
     updateQuantity(item.id, value);
-  };
-
-  const onOpenDialog = () => {
-    setEditQuantityDialogOpen(true);
-    setSelectedItem(item);
   };
 
   return (
