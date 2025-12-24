@@ -5,7 +5,7 @@ import path from "path";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     tanstackRouter({
       target: "react",
@@ -13,9 +13,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    port: mode === "development" ? 3000 : 5000,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));
