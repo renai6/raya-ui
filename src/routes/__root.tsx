@@ -70,14 +70,6 @@ function RootComponent() {
                               Inventory
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Link
-                              to="/employees"
-                              className="[&.active]:font-bold"
-                            >
-                              Employees
-                            </Link>
-                          </DropdownMenuItem>
                         </>
                       )}
                     </DropdownMenuContent>
@@ -94,9 +86,6 @@ function RootComponent() {
                       <>
                         <Link to="/inventory" className="[&.active]:font-bold">
                           Inventory
-                        </Link>
-                        <Link to="/employees" className="[&.active]:font-bold">
-                          Employees
                         </Link>
                       </>
                     )}

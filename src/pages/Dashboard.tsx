@@ -200,7 +200,7 @@ const Dashboard = () => {
                       <Label htmlFor="inventory">Inventory</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="employee" id="employee" />
+                      <RadioGroupItem disabled value="employee" id="employee" />
                       <Label htmlFor="employee">Employee</Label>
                     </div>
                   </RadioGroup>

@@ -23,7 +23,6 @@ import {
   useSalesCashReceived,
   useSalesCurrentScannedItem,
 } from "@/stores/sales";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
@@ -164,106 +163,24 @@ const Sales = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3 mt-2">
-                <Label className="text-sm font-medium">Payment Type</Label>
-                <RadioGroup
-                  value={paymentType}
-                  onValueChange={(value: "CASH" | "CREDIT") => {
-                    setPaymentType(value);
-                    setCashReceived(0);
-                    setEmployeeBarcode("");
-                  }}
-                  className="flex space-x-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="CASH" id="cash" />
-                    <Label htmlFor="cash" className="text-sm font-medium">
-                      Cash
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="CREDIT" id="credit" />
-                    <Label htmlFor="credit" className="text-sm font-medium">
-                      Credit
-                    </Label>
-                  </div>
-                </RadioGroup>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Cash Received</Label>
+                <Input
+                  ref={cashInputRef}
+                  className={`mb-0 ${
+                    cashReceived < total && cashReceived !== 0
+                      ? "border-red-400"
+                      : ""
+                  }`}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setCashReceived(Number(e.target.value))
+                  }
+                  value={cashReceived || ""}
+                />
+                {cashReceived < total && cashReceived !== 0 && (
+                  <small className="text-red-400">Insufficient Cash</small>
+                )}
               </div>
-              {paymentType === "CREDIT" ? (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Employee Number</Label>
-                  <Input
-                    value={employeeBarcode}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (isNaN(Number(e.target.value))) {
-                        return;
-                      }
-                      setEmployeeBarcode(e.target.value);
-                    }}
-                    placeholder="Scan employee barcode"
-                    className={`mb-0 ${
-                      employeeBarcode !== "" &&
-                      (employee?.totalCredit + total > 2000 || !employee?.id)
-                        ? "border-red-400"
-                        : ""
-                    }`}
-                    autoFocus
-                  />
-                  {employee?.totalCredit + total > 2000 && (
-                    <small className="text-red-400">
-                      Employee exceeded credit limit
-                    </small>
-                  )}
-                  {employeeBarcode !== "" && !employee?.id && (
-                    <small className="text-red-400">
-                      Employee number not found
-                    </small>
-                  )}
-                  {employee?.id && (
-                    <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
-                      <div className="flex justify-between text-sm">
-                        <span>Employee Number</span>
-                        <span>{employeeBarcode}</span>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <span>Employee Name</span>
-                        <span>{employee?.name}</span>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <div className="flex flex-col">
-                          <span>Total credit</span>
-                          <small className="text-yellow-500">
-                            Total credit must not exceed ₱2000
-                          </small>
-                        </div>
-                        <span>{employee?.totalCredit}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Cash Received</Label>
-                  <Input
-                    ref={cashInputRef}
-                    className={`mb-0 ${
-                      cashReceived < total && cashReceived !== 0
-                        ? "border-red-400"
-                        : ""
-                    }`}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setCashReceived(Number(e.target.value))
-                    }
-                    value={cashReceived || ""}
-                  />
-                  {cashReceived < total && cashReceived !== 0 && (
-                    <small className="text-red-400">Insufficient Cash</small>
-                  )}
-                </div>
-              )}
-
               <div className="space-y-3">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
