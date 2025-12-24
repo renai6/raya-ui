@@ -38,8 +38,8 @@ function RootComponent() {
             >
               {/* Left: Logo */}
               <div className="flex items-start cursor-pointer flex-col">
-                <h1 className="text-2xl font-bold text-amber-500">RAYA</h1>
-                <small>Steel Colors and Metal Products</small>
+                <h1 className="text-2xl font-bold text-amber-500">NY RAYA</h1>
+                <small>Yusop Store</small>
               </div>
               <div className="flex items-center gap-5">
                 {!isDesktop ? (
