@@ -47,8 +47,8 @@ const Cart = () => {
       <CardContent>
         <hr className="mb-2" />
         {cartItems.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <div className="text-center py-12">
+            <ShoppingCart className="w-12 h-12 mx-auto mb-4" />
             <p>No items in cart</p>
             <p className="text-sm">Scan a barcode to get started</p>
           </div>

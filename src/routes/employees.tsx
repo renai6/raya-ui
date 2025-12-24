@@ -1,11 +1,11 @@
 import { isAdmin, requireAuth } from "@/guards/sirKupal";
-import Inventory from "@/pages/Inventory";
+import Employees from "@/pages/Employees";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/inventory")({
+export const Route = createFileRoute("/employees")({
   beforeLoad: () => {
     requireAuth();
     isAdmin();
   },
-  component: Inventory,
+  component: Employees,
 });

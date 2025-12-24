@@ -5,6 +5,8 @@ import type { CartItem } from "@/types";
 type CreateSaleType = {
   sales: CartItem[];
   cashReceived: number;
+  paymentType: "CASH" | "CREDIT";
+  employeeBarcode?: string;
 };
 
 export const useCreateSale = () => {

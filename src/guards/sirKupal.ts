@@ -5,6 +5,7 @@ export const requireAuth = () => {
   const { token } = useAuthStore.getState();
   if (!token) throw redirect({ to: "/login" });
 };
+
 export const isAdmin = () => {
   const { token, user } = useAuthStore.getState();
   if (!token) throw redirect({ to: "/login" });

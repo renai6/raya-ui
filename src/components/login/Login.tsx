@@ -27,6 +27,9 @@ export function Login({
     <form className="w-full max-w-sm" onSubmit={handleSubmit}>
       <Card className="w-full max-w-sm">
         <CardHeader>
+          <div className="text-center mb-6">
+            <div className="text-3xl font-bold text-amber-500">RAYA</div>
+          </div>
           <CardTitle>Login to your account</CardTitle>
           <CardDescription>
             Enter your email below to login to your account

@@ -4,7 +4,7 @@ function App() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <p className="text-2xl font-bold mb-4">
-        Welcome to NY <span className="text-green-700">RAYA</span>
+        Welcome to <span className="text-amber-500">RAYA</span>
       </p>
       <Link
         to="/login"

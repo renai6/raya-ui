@@ -28,11 +28,14 @@ const Print = () => {
   return (
     <Paper>
       <Text align="center" bold>
-        Yusop Store
+        Steel Colors and Metal Products
       </Text>
-      <Text align="center">Southcom Village, Zamboanga City</Text>
-      <Text align="center">TIN: 339-795-473-0000</Text>
-      <Text align="center">Mobile: 0956-930-3690</Text>
+      <Text align="center" bold>
+        Canteen
+      </Text>
+      <Text align="center">Test Morning Glory, Putik, ZC </Text>
+      <Text align="center">TIN: 000-000-000-0000</Text>
+      <Text align="center">Mobile: 0000-000-0000</Text>
       <Text align="center">
         {date.toDateString()} {date.toLocaleTimeString()}
       </Text>
@@ -66,20 +69,38 @@ const Print = () => {
       <RowText>
         <Text bold>Change</Text>
         <Text>
-          ₱{(transaction?.cashReceived - transaction?.total).toFixed(2)}
+          ₱
+          {transaction?.cashReceived > 0
+            ? (transaction?.cashReceived - transaction?.total).toFixed(2)
+            : "0.00"}
         </Text>
       </RowText>
-
-      <Dot margin={[5, 0]} />
+      <Dot />
+      <Space size={[10, 10]} />
       <Space size={[10, 10]} />
       <Text align="center">
-        Merchandise received in Good Condition at Yusop Store
+        {transaction?.cashReceived === 0
+          ? "Transaction recorded as credit"
+          : ""}
       </Text>
-      <Dot margin={[5, 0]} />
-      <Text bold>OR No: {transaction?.id} </Text>
       <Space size={[10, 10]} />
       <Space size={[10, 10]} />
-      <Text align="center">- THIS IS YOUR OFFICIAL INVOICE -</Text>
+      {transaction?.cashReceived === 0 && (
+        <>
+          <Text align="center">{transaction?.employee?.name}</Text>
+          <Text align="center">_________________________________</Text>
+          <Text align="center">Employee's Signature</Text>
+        </>
+      )}
+
+      <Space size={[10, 10]} />
+      <Space size={[10, 10]} />
+      <Text align="center" bold>
+        OR No: {transaction?.id}{" "}
+      </Text>
+      <Space size={[10, 10]} />
+      <Space size={[10, 10]} />
+      <Text align="center">THIS IS YOUR OFFICIAL INVOICE</Text>
     </Paper>
   );
 };
