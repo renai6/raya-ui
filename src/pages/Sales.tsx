@@ -267,9 +267,7 @@ const Sales = () => {
         <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-white text-xl">
-                Confirm Payment
-              </DialogTitle>
+              <DialogTitle className="text-xl">Confirm Payment</DialogTitle>
               <DialogDescription hidden>
                 This is the description of the dialog.
               </DialogDescription>
@@ -278,9 +276,7 @@ const Sales = () => {
               {/* Transaction Summary */}
               <div className="space-y-4">
                 <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3">
-                  <h3 className="text-white font-semibold mb-3">
-                    Transaction Summary
-                  </h3>
+                  <h3 className="font-semibold mb-3">Transaction Summary</h3>
 
                   {/* Items List */}
                   <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -290,8 +286,8 @@ const Sales = () => {
                         className="flex justify-between text-sm"
                       >
                         <div className="flex-1">
-                          <span className="text-gray-300">{item.name}</span>
-                          <div className="text-xs text-gray-400">
+                          <span>{item.name}</span>
+                          <div className="text-xs">
                             {item.quantity} × ₱{item.selectedPrice.toFixed(2)} (
                             {item.saleType})
                           </div>
@@ -303,7 +299,7 @@ const Sales = () => {
                     ))}
                   </div>
 
-                  <Separator className="bg-gray-600" />
+                  <Separator />
 
                   {/* Totals */}
                   <div className="space-y-2">
@@ -371,7 +367,7 @@ const Sales = () => {
                 <Button
                   variant="outline"
                   onClick={() => setPaymentDialogOpen(false)}
-                  className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent h-12"
+                  className="flex-1 border-gray-600 h-12"
                 >
                   <X className="w-5 h-5 mr-2" />
                   Cancel

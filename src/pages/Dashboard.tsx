@@ -374,13 +374,16 @@ const Dashboard = () => {
             </div>
           </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/2">
+        <Card className="w-full xl:w-1/2 ">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-start gap-3 space-x-2 flex-col">
               <span>Product List</span>
+              <small className="text-amber-500">
+                A list of your recent products which are low in stocks
+              </small>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-h-96 overflow-auto">
             <Table>
               <TableCaption>
                 A list of your recent products which are low in stocks
@@ -404,7 +407,11 @@ const Dashboard = () => {
                       {product.name}
                     </TableCell>
                     <TableCell>{product.barcode}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell
+                      className={`${
+                        product.stock === 0 ? "text-red-500" : "text-amber-500"
+                      } text-right`}
+                    >
                       {product.stock}
                     </TableCell>
                     <TableCell className="text-right">

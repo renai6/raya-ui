@@ -13,12 +13,16 @@ const Print = () => {
     const handleAfterPrint = () => {
       window.close();
     };
-    if (!isLoading) window.print();
+
     window.addEventListener("afterprint", handleAfterPrint);
     // Clean up the event listener when the component unmounts
     return () => {
       window.removeEventListener("afterprint", handleAfterPrint);
     };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) window.print();
   }, [isLoading]);
 
   if (isLoading) {
@@ -42,7 +46,7 @@ const Print = () => {
       <Space size={[20, 10]} />
       <Dot />
       {transaction?.sales.map((item: any) => (
-        <>
+        <div key={item.id}>
           <RowText>
             <Text bold>{item.product.name}</Text>
             <Text>{(item.total * item.quantity).toFixed(2)}</Text>
@@ -52,7 +56,7 @@ const Print = () => {
             <Text>@</Text>
             <Text>{item.total.toFixed(2)}</Text>
           </RowText>
-        </>
+        </div>
       ))}
       <hr />
       <Space size={[5, 5]} />
@@ -62,6 +66,7 @@ const Print = () => {
       </RowText>
       <Space size={[5, 5]} />
       <Dot />
+      <Space size={[5, 5]} />
       <RowText>
         <Text bold>Cash Received</Text>
         <Text>₱{transaction?.cashReceived.toFixed(2)}</Text>
@@ -75,6 +80,7 @@ const Print = () => {
             : "0.00"}
         </Text>
       </RowText>
+      <Space size={[5, 5]} />
       <Dot />
       <Space size={[10, 10]} />
       <Space size={[10, 10]} />
