@@ -25,7 +25,7 @@ export function Login({
 }) {
   return (
     <form className="w-full max-w-sm" onSubmit={handleSubmit}>
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm shadow-[0_8px_30px_rgba(0,0,0,0.6)] border-none">
         <CardHeader>
           <div className="text-center mb-6">
             <div className="text-3xl font-bold text-amber-500">RAYA</div>

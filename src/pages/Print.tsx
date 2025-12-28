@@ -48,7 +48,7 @@ const Print = () => {
       <Space size={[10, 10]} />
       {transaction?.sales.map((item: any) => (
         <div key={item.id}>
-          <RowText style={{ fontSize: 11 }}>
+          <RowText>
             <Text bold>{item.product.name}</Text>
             <Text>{(item.total * item.quantity).toFixed(2)}</Text>
           </RowText>

@@ -48,7 +48,7 @@ const InventoryBarCode = ({ products, openAddProduct, setProduct }: Props) => {
   };
 
   return (
-    <Card className="gap-0">
+    <Card className="gap-0 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none mb-5">
       <CardHeader className="mb-1">
         <CardTitle className="flex items-center space-x-2">
           <Scan className="w-5 h-5 text-yellow-400" />
@@ -71,13 +71,6 @@ const InventoryBarCode = ({ products, openAddProduct, setProduct }: Props) => {
               autoComplete="off"
             />
           </div>
-          <Button
-            type="submit"
-            size="lg"
-            className="bg-green-600 hover:bg-green-700 px-6"
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
         </form>
       </CardContent>
     </Card>
