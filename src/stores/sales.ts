@@ -38,14 +38,15 @@ export const useSaleStore = create<SalesState>((set) => ({
         );
 
         if (existingItemIndex !== -1) {
-          state.cartItems[existingItemIndex].quantity += state.quantity;
+          state.cartItems[existingItemIndex].quantity += state.quantity
+            ? state.quantity
+            : 1;
 
           return { cartItems: state.cartItems };
         }
 
         return {
           cartItems: [
-            ...state.cartItems,
             {
               id: item.id || "",
               productId: item.id || "",
@@ -58,6 +59,7 @@ export const useSaleStore = create<SalesState>((set) => ({
               selectedPrice: item.retailPrice,
               saleType: "RETAIL",
             },
+            ...state.cartItems,
           ],
         };
       });

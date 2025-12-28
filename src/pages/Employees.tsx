@@ -1,6 +1,8 @@
 import Header from "@/components/header/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,14 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { useCreateEmployee } from "@/hooks/useCreateEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useUpdateEmployee } from "@/hooks/useUpdateEmployee";
@@ -37,9 +31,8 @@ import { useCreateBulkEmployees } from "@/hooks/useCreateBulkEmployees";
 import { Spinner } from "@/components/ui/spinner";
 
 const Employees = () => {
-  const [page, setPage] = useState(1);
   const user = useAuthUser();
-  const { data: employeesData } = useEmployees(page);
+  const { data: employeesData } = useEmployees();
   const { mutate: createEmployee } = useCreateEmployee();
   const { mutate: createBulkEmployees } = useCreateBulkEmployees();
   const { mutate: updateEmployee } = useUpdateEmployee();
@@ -108,11 +101,6 @@ const Employees = () => {
     (value) => value.trim() !== ""
   );
 
-  const onPageChange = (newPage: number) => {
-    if (newPage === 0 || employeesData?.count < (newPage - 1) * 10) return;
-    setPage(newPage);
-  };
-
   // Filter employees based on search term
   const filteredEmployees = Array.isArray(employeesData)
     ? employeesData.filter((employee: Employee) =>
@@ -170,7 +158,7 @@ const Employees = () => {
     <div>
       <Header title="Employee Management" user={{ email: user?.email }} />
 
-      <Card className="mt-3 mb-4">
+      <Card className="border-none mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)]">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex flex-col">
@@ -180,7 +168,8 @@ const Employees = () => {
               </small>
             </div>
             <Button variant="default" onClick={openAddEmployee}>
-              Add Employee
+              <Plus className="w-4" />
+              Create Employee
             </Button>
           </CardTitle>
         </CardHeader>
@@ -190,51 +179,34 @@ const Employees = () => {
             className="mb-4"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Employee Number</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Total Credit</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees?.map((employee: Employee) => (
-                <TableRow
-                  key={employee.id}
-                  onClick={() => onEmployeeClick(employee)}
-                  className="cursor-pointer hover:bg-muted"
-                >
-                  <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.employeeNumber}</TableCell>
-                  <TableCell>{employee.contactNumber}</TableCell>
-                  <TableCell>{employee.totalCredit}</TableCell>
+          <div className="max-h-150 overflow-auto pr-2 custom-scrollbar">
+            <Table>
+              <TableHeader className="dark:bg-neutral-800">
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Employee Number</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Total Credit</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  className="cursor-pointer"
-                  role="button"
-                  onClick={() => onPageChange(page - 1)}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink>{page}</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  className="cursor-pointer"
-                  role="button"
-                  onClick={() => onPageChange(page + 1)}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+              </TableHeader>
+              <TableBody>
+                {filteredEmployees?.map((employee: Employee) => (
+                  <TableRow
+                    key={employee.id}
+                    onClick={() => onEmployeeClick(employee)}
+                    className="cursor-pointer hover:bg-muted"
+                  >
+                    <TableCell className="font-medium">
+                      {employee.name}
+                    </TableCell>
+                    <TableCell>{employee.employeeNumber}</TableCell>
+                    <TableCell>{employee.contactNumber}</TableCell>
+                    <TableCell>{employee.totalCredit}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
