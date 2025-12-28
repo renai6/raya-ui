@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Scan } from "lucide-react";
+import { PenLine, Scan } from "lucide-react";
 import { Input } from "../ui/input";
 import type { Product } from "@/types";
 import { toast } from "sonner";
@@ -52,7 +52,7 @@ const SalesBarCode = ({
       // Add directly to cart with default settings
       addProductToCart(product);
       setCurrentScannedItem(product);
-      setQuantity(0);
+
       // Clear the current scanned item after 3 seconds
       setTimeout(() => setCurrentScannedItem(null), 3000);
       setIsScanning(false);
@@ -60,16 +60,27 @@ const SalesBarCode = ({
       // Handle unknown barcode
       toast.error(`Product ${barcodeInput} not found`);
     }
+
     setQuantity(0);
     setBarcodeInput("");
   };
 
   return (
-    <Card className="gap-0">
+    <Card className="gap-0 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
       <CardHeader className="mb-1">
-        <CardTitle className="flex items-center space-x-2">
-          <Scan className="w-5 h-5 text-yellow-400" />
-          <span>Barcode Scanner</span>
+        <CardTitle className="flex justify-between items-center space-x-2">
+          <div className="flex gap-3 items-center">
+            <Scan className="w-5 h-5 text-yellow-400" />
+            <span>Barcode Scanner</span>
+          </div>
+          <div>
+            {quantity ? (
+              <div className="flex gap-3 items-center">
+                <p>Adding {quantity} items </p>
+                <PenLine className="w-5 h-5 text-yellow-400" />
+              </div>
+            ) : null}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>

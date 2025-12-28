@@ -1,21 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { ShoppingCart, PenLine } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { Button } from "../ui/button";
 import CartItems from "./CartItems";
-import {
-  useQuantity,
-  useSalesActions,
-  useSalesCartItems,
-} from "@/stores/sales";
+import { useSalesActions, useSalesCartItems } from "@/stores/sales";
 
 const Cart = () => {
   const { clearCart } = useSalesActions();
-  const quantity = useQuantity();
   const cartItems = useSalesCartItems();
 
   return (
-    <Card className="shadow-lg gap-0 mb-3">
-      <CardHeader className="pb-2">
+    <Card className="gap-2 mb-3 shadow-[0_8px_30px_rgba(0,0,0,0.6)] border-none">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <ShoppingCart className="w-5 h-5 text-yellow-400" />
@@ -25,12 +20,6 @@ const Cart = () => {
           </CardTitle>
 
           <div>
-            {quantity ? (
-              <div className="flex gap-3">
-                <p>Adding {quantity} items </p>
-                <PenLine className="w-5 h-5 text-yellow-400" />
-              </div>
-            ) : null}
             {cartItems.length > 1 && (
               <Button
                 variant="outline"
