@@ -2,24 +2,29 @@ import Header from "@/components/header/Header";
 import InventoryBarCode from "@/components/inventory/InventoryBarCode";
 
 import { useCreateProduct } from "@/hooks/useCreateProduct";
-import { useProducts } from "@/hooks/useProducts";
+import { useDeleteProduct, useProducts } from "@/hooks/useProducts";
 import { useUpdateProduct } from "@/hooks/useUpdateProduct";
 import { useAuthUser } from "@/stores/authStore";
 import type { Product } from "@/types";
 import { useState, useEffect } from "react";
 import AddProductDialog from "@/components/inventory/AddProductDialog";
 import ProductsTable from "@/components/inventory/ProductsTable";
+import { toast } from "sonner";
 
 const Inventory = () => {
   const user = useAuthUser();
   const { data: productsData, isLoading } = useProducts();
   const { mutate: createProduct } = useCreateProduct();
   const { mutate: updateProduct } = useUpdateProduct();
+  const { mutate: deleteProduct } = useDeleteProduct();
 
   const [isItemAddDialogOpen, setIsItemAddDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  const [deletingBarcode, setDeletingBarcode] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,6 +36,8 @@ const Inventory = () => {
 
   const openAddProduct = () => {
     setIsItemAddDialogOpen(true);
+    setDeletingBarcode("");
+    setIsDeleting(false);
   };
 
   const [form, setForm] = useState<Product>({
@@ -57,6 +64,17 @@ const Inventory = () => {
     }));
   };
 
+  const resetDialog = () => {
+    setIsItemAddDialogOpen(false);
+    setForm({
+      name: "",
+      barcode: "",
+      retailPrice: 0,
+      wholesalePrice: 0,
+      stock: 0,
+    });
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Add API call for add/edit product here
@@ -67,14 +85,18 @@ const Inventory = () => {
       createProduct(form);
     }
 
-    setIsItemAddDialogOpen(false);
-    setForm({
-      name: "",
-      barcode: "",
-      retailPrice: 0,
-      wholesalePrice: 0,
-      stock: 0,
-    });
+    resetDialog();
+  };
+
+  const onDeleteProduct = (id: string | undefined) => {
+    if (!id) return;
+    if (deletingBarcode !== selectedProduct?.barcode) return;
+    if (user?.role === "CASHIER") return;
+    deleteProduct(id);
+
+    resetDialog();
+
+    toast.success("Product deleted successfully!");
   };
 
   const onItemClick = (product: Product) => {
@@ -119,6 +141,11 @@ const Inventory = () => {
         selectedProduct={selectedProduct}
         handleFormSubmit={handleFormSubmit}
         handleFormChange={handleFormChange}
+        onDeleteProduct={onDeleteProduct}
+        deletingBarcode={deletingBarcode}
+        setDeletingBarcode={setDeletingBarcode}
+        isDeleting={isDeleting}
+        setIsDeleting={setIsDeleting}
       />
     </div>
   );

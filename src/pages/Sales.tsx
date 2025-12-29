@@ -1,12 +1,6 @@
 import Cart from "@/components/sales/Cart";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useProducts } from "@/hooks/useProducts";
 import { Check, CreditCard, X, HandCoins } from "lucide-react";
@@ -158,7 +152,7 @@ const Sales = () => {
         </div>
 
         {/* Right Column - Summary Card */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Card className="shadow-lg sticky top-4 gap-1 shadow-[0_8px_25px_rgba(0,0,0,0.6)] border-none">
             <CardHeader>
               <CardTitle className="flex justify-between items-center space-x-2">
@@ -262,7 +256,7 @@ const Sales = () => {
                       <div className="flex justify-between text-sm">
                         <div className="flex flex-col">
                           <span>Total credit</span>
-                          <small className="text-yellow-500">
+                          <small className="dark:text-yellow-500 text-yellow-600">
                             Total credit must not exceed ₱2000
                           </small>
                         </div>
@@ -311,6 +305,34 @@ const Sales = () => {
               )}
             </CardContent>
           </Card>
+          <div className="mt-5 pl-5 flex flex-col space-y-2">
+            <h2 className="text-bold">Key Controls</h2>
+
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">C</span> : Activate
+              cash input
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Q</span> : Open
+              quantity dialog
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">F9</span> : Activate
+              barcode input
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">F8</span> : Proceed to
+              payment summary
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Tab</span> : Navigating
+              the cursor between inputs and buttons
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Esc</span> : Closing
+              dialogs
+            </p>
+          </div>
         </div>
       </div>
       <ItemQuantityDialog />
@@ -401,16 +423,16 @@ const Sales = () => {
                 </Card>
 
                 {paymentType === "CREDIT" && (
-                  <Card>
-                    <CardHeader>
+                  <Card className="border-none p-2 gap-0">
+                    <CardHeader className="p-2">
                       <CardTitle>
-                        <span>Employee Number</span>
+                        <div className="flex justify-between">
+                          <span>Employee Number</span>
+                          <span>{employeeBarcode}</span>
+                        </div>
                       </CardTitle>
-                      <CardDescription>
-                        <span>{employeeBarcode}</span>
-                      </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-2">
                       <div className="flex justify-between text-sm">
                         <span>Employee Name</span>
                         <span>{employee?.name}</span>
