@@ -385,7 +385,7 @@ const Dashboard = () => {
               <TableCaption>
                 A list of your recent products which are low in stocks
               </TableCaption>
-                <TableHeader className="dark:bg-neutral-800">
+              <TableHeader className="dark:bg-neutral-800">
                 <TableRow>
                   <TableHead>Item</TableHead>
                   <TableHead>Barcode</TableHead>
