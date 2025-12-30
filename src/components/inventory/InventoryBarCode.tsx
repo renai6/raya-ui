@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Plus, Scan } from "lucide-react";
+import { Scan } from "lucide-react";
 import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import type { Product } from "@/types";
 
 type Props = {
