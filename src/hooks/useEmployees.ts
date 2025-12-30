@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 
-export const useEmployees = (page: number = 0) => {
+export const useEmployees = () => {
   return useQuery({
-    queryKey: ["employees", "page", page],
+    queryKey: ["employees"],
     queryFn: async () => {
-      const response = await api.get(`/employees?page=${page}`);
+      const response = await api.get(`/employees`);
 
       return response.data;
     },

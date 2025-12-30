@@ -4,7 +4,7 @@ import { Minus, Plus, TicketPercent, Trash2 } from "lucide-react";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Badge } from "../ui/badge";
-import { useSalesActions } from "@/stores/sales";
+import { useSalesActions, useSalesCurrentScannedItem } from "@/stores/sales";
 import {
   Popover,
   PopoverContent,
@@ -18,15 +18,12 @@ type Props = {
 
 const CartItems = (props: Props) => {
   const { updatePriceType, updateQuantity, removeItem } = useSalesActions();
+  const currentScannedItem = useSalesCurrentScannedItem();
 
   const { item, index } = props;
 
   const onUpdateQuantity = (value: number) => {
     if (value > item.stock || value < 1) return;
-
-    if (value < 10 && item.saleType === "WHOLESALE") {
-      updatePriceType(item.id, "RETAIL");
-    }
 
     updateQuantity(item.id, value);
   };
@@ -34,8 +31,12 @@ const CartItems = (props: Props) => {
   return (
     <div
       key={`${item.id}-${item.saleType}-${index}`}
-      className={`px-4 py-2 dark:bg-zinc-800 rounded-lg space-y-3 ${
+      className={`px-4 py-2 rounded-lg space-y-3 ${
         item.saleType === "WHOLESALE" ? "border border-amber-400" : ""
+      } ${
+        currentScannedItem?.id === item.id
+          ? "dark:bg-yellow-500/10 bg-neutral-400"
+          : "dark:bg-neutral-800 bg-neutral-200"
       }`}
     >
       {/* Item Header */}
@@ -46,7 +47,7 @@ const CartItems = (props: Props) => {
 
             <div className="flex items-center space-x-2 mt-1">
               <Badge
-                className={`${
+                className={`text-white ${
                   item.saleType === "WHOLESALE"
                     ? "bg-amber-900"
                     : "bg-green-800"
@@ -61,56 +62,54 @@ const CartItems = (props: Props) => {
           <div className="flex items-center space-x-4 gap-3">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                {item.quantity >= 10 && (
-                  <Popover>
-                    <PopoverTrigger>
-                      <TicketPercent className="w-4 h-4 text-amber-400" />
-                    </PopoverTrigger>
-                    <PopoverContent className="min-w-[400px] mt-2">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-300 font-medium">
-                          Price Type
-                        </Label>
-                        <RadioGroup
-                          value={item.saleType}
-                          onValueChange={(value: "RETAIL" | "WHOLESALE") =>
-                            updatePriceType(item.id, value)
-                          }
-                          className="flex space-x-6"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem
-                              value="RETAIL"
-                              id={`regular-${item.id}-${item.saleType}`}
-                              className="border-gray-500"
-                              checked={item.saleType === "RETAIL"}
-                            />
-                            <Label
-                              htmlFor={`regular-${item.id}-${item.saleType}`}
-                              className="text-sm text-gray-300 cursor-pointer"
-                            >
-                              Regular - ₱{item.retailPrice.toFixed(2)}
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem
-                              value="WHOLESALE"
-                              id={`wholesale-${item.id}-${item.saleType}`}
-                              className="border-gray-500"
-                              checked={item.saleType === "WHOLESALE"}
-                            />
-                            <Label
-                              htmlFor={`wholesale-${item.id}-${item.saleType}`}
-                              className="text-sm text-gray-300 cursor-pointer"
-                            >
-                              Wholesale - ₱{item.wholesalePrice.toFixed(2)}
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
+                <Popover>
+                  <PopoverTrigger>
+                    <TicketPercent className="w-4 h-4 text-amber-400" />
+                  </PopoverTrigger>
+                  <PopoverContent className="min-w-[400px] mt-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-300 font-medium">
+                        Price Type
+                      </Label>
+                      <RadioGroup
+                        value={item.saleType}
+                        onValueChange={(value: "RETAIL" | "WHOLESALE") =>
+                          updatePriceType(item.id, value)
+                        }
+                        className="flex space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value="RETAIL"
+                            id={`regular-${item.id}-${item.saleType}`}
+                            className="border-gray-500"
+                            checked={item.saleType === "RETAIL"}
+                          />
+                          <Label
+                            htmlFor={`regular-${item.id}-${item.saleType}`}
+                            className="text-sm text-gray-300 cursor-pointer"
+                          >
+                            Regular - ₱{item.retailPrice.toFixed(2)}
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value="WHOLESALE"
+                            id={`wholesale-${item.id}-${item.saleType}`}
+                            className="border-gray-500"
+                            checked={item.saleType === "WHOLESALE"}
+                          />
+                          <Label
+                            htmlFor={`wholesale-${item.id}-${item.saleType}`}
+                            className="text-sm text-gray-300 cursor-pointer"
+                          >
+                            Wholesale - ₱{item.wholesalePrice.toFixed(2)}
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="flex items-center space-x-2">
                 <Button

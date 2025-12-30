@@ -15,13 +15,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Header from "@/components/header/Header";
-import { Badge } from "@/components/ui/badge";
 import {
   useIsEditQuantityDialogOpen,
   useSalesActions,
   useSalesCartItems,
   useSalesCashReceived,
-  useSalesCurrentScannedItem,
 } from "@/stores/sales";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
@@ -29,24 +27,26 @@ import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
 import SalesBarCode from "@/components/sales/BarCode";
 import { useEmployee } from "@/hooks/useEmployee";
+import { Spinner } from "@/components/ui/spinner";
 
 const Sales = () => {
   const { setCashReceived, clearCart, setEditQuantityDialogOpen } =
     useSalesActions();
 
   const isEditQuantityDialogOpen = useIsEditQuantityDialogOpen();
-  const currentScannedItem = useSalesCurrentScannedItem();
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
   const { data: productsData, isLoading } = useProducts();
-  const { mutate: createSale } = useCreateSale();
+  const { mutate: createSale, isPending } = useCreateSale();
   const user = useAuthUser();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [isWaitingBarcode, setIsWaitingBarcode] = useState(true);
   const [paymentType, setPaymentType] = useState<"CASH" | "CREDIT">("CASH");
   const [employeeBarcode, setEmployeeBarcode] = useState("");
+  const [employeeBarcodeInput, setEmployeeBarcodeInput] = useState("");
 
-  const { data: employee } = useEmployee(employeeBarcode);
+  const { data: employee, isLoading: isEmployeeLoading } =
+    useEmployee(employeeBarcode);
 
   const processPayment = async () => {
     setPaymentDialogOpen(false);
@@ -60,6 +60,7 @@ const Sales = () => {
     setCashReceived(0);
     setPaymentType("CASH");
     setEmployeeBarcode("");
+    setEmployeeBarcodeInput("");
   };
 
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +109,14 @@ const Sales = () => {
     };
   }, [cartItems, cashReceived, isEditQuantityDialogOpen, paymentType]);
 
+  useEffect(() => {
+    console.log(employeeBarcodeInput);
+    const timeout = setTimeout(() => {
+      setEmployeeBarcode(employeeBarcodeInput);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [employeeBarcodeInput]);
+
   const onOpenPaymentDialog = () => {
     if (cartItems.length === 0) return;
     if (
@@ -132,7 +141,12 @@ const Sales = () => {
   const total = subtotal;
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Products Data</h2>
+      </div>
+    );
   }
 
   return (
@@ -140,9 +154,9 @@ const Sales = () => {
       {/* Header */}
       <Header title="Sales Checkout" user={{ email: user?.email }} />
 
-      <div className="grid lg:grid-cols-3 gap-3">
+      <div className="grid lg:grid-cols-3 gap-7">
         {/* Left Column - Barcode Input & Item List */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 space-y-6">
           {/* Barcode Scanner */}
           <SalesBarCode
             products={productsData.products || []}
@@ -155,12 +169,37 @@ const Sales = () => {
         </div>
 
         {/* Right Column - Summary Card */}
-        <div className="space-y-6">
-          <Card className="shadow-lg sticky top-4 gap-1">
+        <div className="space-y-8">
+          <Card className="shadow-lg sticky top-4 gap-1 shadow-[0_8px_25px_rgba(0,0,0,0.6)] border-none">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <HandCoins className="w-5 h-5 text-amber-400" />
-                <span>Payment Summary</span>
+              <CardTitle className="flex justify-between items-center space-x-2">
+                <div className="flex gap-3 items-center">
+                  <HandCoins className="w-5 h-5 text-amber-400" />
+                  <span>Payment Summary</span>
+                </div>
+                <div className="space-y-3">
+                  {paymentType === "CASH" ? (
+                    <Button
+                      onClick={onOpenPaymentDialog}
+                      disabled={cartItems.length === 0 || cashReceived < total}
+                    >
+                      <CreditCard className="w-4" />
+                      Process Payment
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={onOpenPaymentDialog}
+                      disabled={
+                        cartItems.length === 0 ||
+                        !employee?.id ||
+                        employee?.totalCredit + total > 2000
+                      }
+                    >
+                      <CreditCard className="w-4" />
+                      Process Payment
+                    </Button>
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -172,6 +211,7 @@ const Sales = () => {
                     setPaymentType(value);
                     setCashReceived(0);
                     setEmployeeBarcode("");
+                    setEmployeeBarcodeInput("");
                   }}
                   className="flex space-x-6"
                 >
@@ -193,12 +233,14 @@ const Sales = () => {
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Employee Number</Label>
                   <Input
-                    value={employeeBarcode}
+                    value={employeeBarcodeInput}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (isNaN(Number(e.target.value))) {
+                      const value = e.target.value;
+                      console.log(value);
+                      if (isNaN(Number(value))) {
                         return;
                       }
-                      setEmployeeBarcode(e.target.value);
+                      setEmployeeBarcodeInput(value);
                     }}
                     placeholder="Scan employee barcode"
                     className={`mb-0 ${
@@ -214,11 +256,21 @@ const Sales = () => {
                       Employee exceeded credit limit
                     </small>
                   )}
-                  {employeeBarcode !== "" && !employee?.id && (
-                    <small className="text-red-400">
-                      Employee number not found
-                    </small>
+                  {employeeBarcode !== "" &&
+                    !employee?.id &&
+                    !isEmployeeLoading && (
+                      <small className="text-red-400">
+                        Employee number not found
+                      </small>
+                    )}
+
+                  {isEmployeeLoading && (
+                    <div className="bg-zinc-700/30 rounded-lg p-4 flex gap-1 justify-center flex-col items-center mt-3">
+                      <Spinner className="size-6 text-amber-500" />
+                      <small>Fetching employee data</small>
+                    </div>
                   )}
+
                   {employee?.id && (
                     <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
                       <div className="flex justify-between text-sm">
@@ -234,7 +286,7 @@ const Sales = () => {
                       <div className="flex justify-between text-sm">
                         <div className="flex flex-col">
                           <span>Total credit</span>
-                          <small className="text-yellow-500">
+                          <small className="dark:text-yellow-500 text-yellow-600">
                             Total credit must not exceed ₱2000
                           </small>
                         </div>
@@ -264,37 +316,13 @@ const Sales = () => {
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span className="text-amber-400">₱{total.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="space-y-3 pt-4">
-                {paymentType === "CASH" ? (
-                  <Button
-                    onClick={onOpenPaymentDialog}
-                    className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
-                    disabled={cartItems.length === 0 || cashReceived < total}
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Process Payment
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={onOpenPaymentDialog}
-                    className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
-                    disabled={
-                      cartItems.length === 0 ||
-                      !employee?.id ||
-                      employee?.totalCredit + total > 2000
-                    }
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Process Payment
-                  </Button>
-                )}
-              </div>
+
               {cartItems.length > 0 && (
                 <div className="pt-4 border-t">
                   <div className="text-xs space-y-1">
@@ -307,42 +335,34 @@ const Sales = () => {
               )}
             </CardContent>
           </Card>
-          {currentScannedItem && (
-            <Card className="gap-0 border-0 shadow-lg bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30 animate-in slide-in-from-top-2 duration-300">
-              <CardHeader className="pb-1">
-                <CardTitle className="flex items-center space-x-2 text-lg">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Item Scanned</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-2 bg-gray-100/50 dark:bg-gray-700/50 rounded-lg border border-gray-300/20 dark:border-purple-500/20">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white text-lg">
-                      {currentScannedItem.name}
-                    </h3>
-                    <div className="flex items-center space-x-3 mt-2">
-                      <Badge
-                        variant="secondary"
-                        className="dark:bg-purple-600/20 dark:text-purple-300 dark:border-purple-500/30"
-                      >
-                        Retail
-                      </Badge>
-                      <span className="text-sm">
-                        #{currentScannedItem.barcode}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-400">
-                      ₱ {currentScannedItem.retailPrice.toFixed(2)}
-                    </p>
-                    <p className="text-sm">Added to cart</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <div className="mt-5 pl-5 flex flex-col space-y-2">
+            <h2 className="text-bold">Key Controls</h2>
+
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">C</span> : Activate
+              cash input
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Q</span> : Open
+              quantity dialog
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">F9</span> : Activate
+              barcode input
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">F8</span> : Proceed to
+              payment summary
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Tab</span> : Navigating
+              the cursor between inputs and buttons
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Esc</span> : Closing
+              dialogs
+            </p>
+          </div>
         </div>
       </div>
       <ItemQuantityDialog />
@@ -351,115 +371,137 @@ const Sales = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="text-xl">Confirm Payment</DialogTitle>
-              <DialogDescription hidden>
-                This is the description of the dialog.
+              <DialogDescription className="text-sm text-amber-500">
+                Review items and total before confirming the payment.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               {/* Transaction Summary */}
               <div className="space-y-4">
-                <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3">
-                  <h3 className="font-semibold mb-3">Transaction Summary</h3>
-
-                  {/* Items List */}
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {cartItems.map((item, index) => (
-                      <div
-                        key={`${item.id}-${item.saleType}-${index}`}
-                        className="flex justify-between text-sm"
-                      >
-                        <div className="flex-1">
-                          <span>{item.name}</span>
-                          <div className="text-xs">
-                            {item.quantity} × ₱{item.selectedPrice.toFixed(2)} (
-                            {item.saleType})
+                <Card className="border-none p-2 gap-0">
+                  <CardHeader className="p-2">
+                    <CardTitle>Transaction Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    {/* Items List */}
+                    <div className="space-y-2 max-h-60 custom-scrollbar overflow-y-auto mb-3 pr-2">
+                      {cartItems.map((item, index) => (
+                        <div
+                          key={`${item.id}-${item.saleType}-${index}`}
+                          className="flex justify-between text-sm"
+                        >
+                          <div className="flex-1">
+                            <span>{item.name}</span>
+                            <div className="text-xs">
+                              {item.quantity} × ₱{item.selectedPrice.toFixed(2)}{" "}
+                              ({item.saleType})
+                            </div>
                           </div>
+                          <span className="text-white font-medium">
+                            ₱{(item.selectedPrice * item.quantity).toFixed(2)}
+                          </span>
                         </div>
-                        <span className="text-white font-medium">
-                          ₱{(item.selectedPrice * item.quantity).toFixed(2)}
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    {/* Totals */}
+                    <div className="space-y-2 mt-2">
+                      <div className="flex justify-between text-lg font-bold">
+                        <span>Total</span>
+                        <span className="text-yellow-500">
+                          ₱{total.toFixed(2)}
                         </span>
                       </div>
-                    ))}
-                  </div>
-
-                  <Separator />
-
-                  {/* Totals */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total</span>
-                      <span className="text-yellow-500">
-                        ₱{total.toFixed(2)}
-                      </span>
+                      {paymentType === "CASH" && (
+                        <div className="flex justify-between text-sm">
+                          <span>Change</span>
+                          <span>₱{(cashReceived - total).toFixed(2)}</span>
+                        </div>
+                      )}
                     </div>
-                    {paymentType === "CASH" && (
-                      <div className="flex justify-between text-sm">
-                        <span>Change</span>
-                        <span>₱{(cashReceived - total).toFixed(2)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Transaction Details */}
-                <div className="bg-zinc-700/30 rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Items Count</span>
-                    <span>
-                      {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-                    </span>
-                  </div>
 
-                  <div className="flex justify-between text-sm">
-                    <span>Cashier</span>
-                    <span>{user?.email}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Date & Time</span>
-                    <span>{new Date().toLocaleString()}</span>
-                  </div>
-                </div>
+                <Card className="border-none p-2 gap-0">
+                  <CardHeader className="p-2">
+                    <CardTitle>
+                      <div className="flex justify-between">
+                        <span>Items Count</span>
+                        <span>
+                          {cartItems.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0
+                          )}
+                        </span>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Cashier</span>
+                      <span>{user?.email}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Date & Time</span>
+                      <span>{new Date().toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {paymentType === "CREDIT" && (
-                  <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span>Employee Number</span>
-                      <span>{employeeBarcode}</span>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span>Employee Name</span>
-                      <span>{employee?.name}</span>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <div className="flex flex-col">
-                        <span>Total credit</span>
-                        <small className="text-yellow-500">
-                          Total credit must not exceed ₱2000
-                        </small>
+                  <Card className="border-none p-2 gap-0">
+                    <CardHeader className="p-2">
+                      <CardTitle>
+                        <div className="flex justify-between">
+                          <span>Employee Number</span>
+                          <span>{employeeBarcode}</span>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Employee Name</span>
+                        <span>{employee?.name}</span>
                       </div>
-                      <span>{employee?.totalCredit}</span>
-                    </div>
-                  </div>
+
+                      <div className="flex justify-between text-sm">
+                        <div className="flex flex-col">
+                          <span>Total credit</span>
+                          <small className="text-yellow-500">
+                            Total credit must not exceed ₱2000
+                          </small>
+                        </div>
+                        <span>{employee?.totalCredit}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
 
               {/* Action Buttons */}
               <div className="flex space-x-3">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => setPaymentDialogOpen(false)}
-                  className="flex-1 border-gray-600 h-12"
+                  className="flex-1"
                 >
                   <X className="w-5 h-5 mr-2" />
                   Cancel
                 </Button>
                 <Button
                   onClick={processPayment}
-                  className="flex-1 bg-green-600 hover:bg-green-700 h-12 text-lg font-semibold"
+                  className="flex-1"
+                  disabled={isPending}
                 >
-                  <Check className="w-5 h-5 mr-2" />
+                  {isPending ? (
+                    <Spinner className="size-5 mr-2" />
+                  ) : (
+                    <Check className="w-5 h-5 mr-2" />
+                  )}
                   Confirm Payment
                 </Button>
               </div>

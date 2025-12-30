@@ -1,4 +1,4 @@
-import { ShoppingCart, BookDashed } from "lucide-react";
+import { ShoppingCart, BookDashed, Users } from "lucide-react";
 
 type Props = {
   user: {
@@ -14,9 +14,11 @@ const Header = ({ user, title }: Props) => {
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-amber-500 rounded-sm flex items-center justify-center">
             {title === "Dashboard" ? (
-              <BookDashed className="w-5 h-5 text-white" />
+              <BookDashed className="w-5 h-5 text-black" />
+            ) : title === "Employee Management" ? (
+              <Users className="w-5 h-5 text-black" />
             ) : (
-              <ShoppingCart className="w-5 h-5 text-white" />
+              <ShoppingCart className="w-5 h-5 text-black" />
             )}
           </div>
           <div>

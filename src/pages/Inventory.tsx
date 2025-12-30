@@ -1,58 +1,47 @@
 import Header from "@/components/header/Header";
 import InventoryBarCode from "@/components/inventory/InventoryBarCode";
-import { Button } from "@/components/ui/button";
-import { RefreshCcw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+
 import { useCreateProduct } from "@/hooks/useCreateProduct";
-import { useProducts } from "@/hooks/useProducts";
+import { useDeleteProduct, useProducts } from "@/hooks/useProducts";
 import { useUpdateProduct } from "@/hooks/useUpdateProduct";
 import { useAuthUser } from "@/stores/authStore";
 import type { Product } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import AddProductDialog from "@/components/inventory/AddProductDialog";
+import ProductsTable from "@/components/inventory/ProductsTable";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 const Inventory = () => {
-  const [page, setPage] = useState(1);
   const user = useAuthUser();
-  const { data: productsData, isLoading } = useProducts(page);
-  const { mutate: createProduct } = useCreateProduct();
-  const { mutate: updateProduct } = useUpdateProduct();
+  const { data: productsData, isLoading } = useProducts();
+  const { mutate: createProduct, isPending: isCreatePending } =
+    useCreateProduct();
+  const { mutate: updateProduct, isPending: isUpdatePending } =
+    useUpdateProduct();
+  const { mutate: deleteProduct, isPending: isDeletePending } =
+    useDeleteProduct();
 
   const [isItemAddDialogOpen, setIsItemAddDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  const [deletingBarcode, setDeletingBarcode] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const openAddProduct = () => {
     setIsItemAddDialogOpen(true);
-  };
-
-  const onPageChange = (newPage: number) => {
-    if (newPage === 0 || productsData.count < (newPage - 1) * 10) return;
-    setPage(newPage);
+    setDeletingBarcode("");
+    setIsDeleting(false);
   };
 
   const [form, setForm] = useState<Product>({
@@ -79,16 +68,7 @@ const Inventory = () => {
     }));
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Add API call for add/edit product here
-    if (user?.role === "CASHIER") return;
-    if (selectedProduct?.id) {
-      updateProduct(form);
-    } else {
-      createProduct(form);
-    }
-
+  const resetDialog = () => {
     setIsItemAddDialogOpen(false);
     setForm({
       name: "",
@@ -99,6 +79,30 @@ const Inventory = () => {
     });
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Add API call for add/edit product here
+    if (user?.role === "CASHIER") return;
+    if (selectedProduct?.id) {
+      updateProduct(form);
+    } else {
+      createProduct(form);
+    }
+
+    resetDialog();
+  };
+
+  const onDeleteProduct = (id: string | undefined) => {
+    if (!id) return;
+    if (deletingBarcode !== selectedProduct?.barcode) return;
+    if (user?.role === "CASHIER") return;
+    deleteProduct(id);
+
+    resetDialog();
+
+    toast.success("Product deleted successfully!");
+  };
+
   const onItemClick = (product: Product) => {
     if (user?.role === "CASHIER") return;
     setSelectedProduct(product);
@@ -107,13 +111,18 @@ const Inventory = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Products Data</h2>
+      </div>
+    );
   }
   // Filter products based on search term
   // This is a simple client-side filter; for large datasets, consider server-side filtering
   const filteredProducts = Array.isArray(productsData?.products)
     ? productsData.products.filter((product: Product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       )
     : [];
 
@@ -128,151 +137,28 @@ const Inventory = () => {
         />
       )}
 
-      <Card className="mt-3 mb-4">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 justify-between">
-            <span>Product List</span>
-            <Button variant="secondary" type="submit" size="sm">
-              <RefreshCcw className="w-5 h-5" />
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="Search products..."
-            className="mb-4"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Barcode</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Retail Price</TableHead>
-                <TableHead className="text-right">Wholesal Price</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts?.map((product: Product) => (
-                <TableRow
-                  key={product.id}
-                  onClick={() => onItemClick(product)}
-                  className="cursor-pointer hover:bg-muted"
-                >
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.barcode}</TableCell>
-                  <TableCell className="text-right">{product.stock}</TableCell>
-                  <TableCell className="text-right">
-                    {product.retailPrice.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {product.wholesalePrice.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  className="cursor-pointer"
-                  role="button"
-                  onClick={() => onPageChange(page - 1)}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink>{page}</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  className="cursor-pointer"
-                  role="button"
-                  onClick={() => onPageChange(page + 1)}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </CardContent>
-      </Card>
-      <Dialog open={isItemAddDialogOpen} onOpenChange={setIsItemAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedProduct?.id ? "Edit" : "Add"} Product
-            </DialogTitle>
-            <DialogDescription hidden>
-              This is the description of the dialog.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <form className="space-y-4" onSubmit={handleFormSubmit}>
-              <div>
-                <Label className="mb-2">Product Name</Label>
-                <Input
-                  name="name"
-                  value={form?.name}
-                  onChange={handleFormChange}
-                  placeholder="Product Name"
-                  required
-                />
-              </div>
-              <div>
-                <Label className="mb-2">Barcode</Label>
-                <Input
-                  disabled
-                  name="barcode"
-                  value={form?.barcode}
-                  onChange={handleFormChange}
-                  placeholder="Barcode"
-                  required
-                />
-              </div>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Label className="mb-2">Retail Price</Label>
-                  <Input
-                    name="retailPrice"
-                    type="number"
-                    step="0.01"
-                    value={form?.retailPrice}
-                    onChange={handleFormChange}
-                    placeholder="Retail Price"
-                    required
-                  />
-                </div>
-                <div className="flex-1">
-                  <Label className="mb-2">Wholesale Price</Label>
-                  <Input
-                    name="wholesalePrice"
-                    type="number"
-                    step="0.01"
-                    value={form?.wholesalePrice}
-                    onChange={handleFormChange}
-                    placeholder="Wholesale Price"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="mb-2">Stock</Label>
-                <Input
-                  name="stock"
-                  type="number"
-                  value={form?.stock}
-                  onChange={handleFormChange}
-                  placeholder="Stock"
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                {selectedProduct?.id ? "Update Product" : "Add Product"}
-              </Button>
-            </form>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProductsTable
+        products={filteredProducts}
+        onItemClick={onItemClick}
+        setSearchTerm={setSearchTerm}
+      />
+
+      <AddProductDialog
+        isItemAddDialogOpen={isItemAddDialogOpen}
+        setIsItemAddDialogOpen={setIsItemAddDialogOpen}
+        form={form}
+        selectedProduct={selectedProduct}
+        handleFormSubmit={handleFormSubmit}
+        handleFormChange={handleFormChange}
+        onDeleteProduct={onDeleteProduct}
+        deletingBarcode={deletingBarcode}
+        setDeletingBarcode={setDeletingBarcode}
+        isDeleting={isDeleting}
+        setIsDeleting={setIsDeleting}
+        isCreatePending={isCreatePending}
+        isUpdatePending={isUpdatePending}
+        isDeletePending={isDeletePending}
+      />
     </div>
   );
 };

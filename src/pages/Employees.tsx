@@ -1,6 +1,8 @@
 import Header from "@/components/header/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,13 +21,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useCreateEmployee } from "@/hooks/useCreateEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useUpdateEmployee } from "@/hooks/useUpdateEmployee";
@@ -35,14 +34,16 @@ import * as XLSX from "xlsx";
 import { useState } from "react";
 import { useCreateBulkEmployees } from "@/hooks/useCreateBulkEmployees";
 import { Spinner } from "@/components/ui/spinner";
+import { useDeleteEmployee } from "@/hooks/useEmployee";
+import { toast } from "sonner";
 
 const Employees = () => {
-  const [page, setPage] = useState(1);
   const user = useAuthUser();
-  const { data: employeesData } = useEmployees(page);
+  const { data: employeesData, isLoading } = useEmployees();
   const { mutate: createEmployee } = useCreateEmployee();
   const { mutate: createBulkEmployees } = useCreateBulkEmployees();
   const { mutate: updateEmployee } = useUpdateEmployee();
+  const { mutate: deleteEmployee } = useDeleteEmployee();
 
   const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false);
   const [isCreatingBulkEmployees, setIsCreatingBulkEmployees] = useState(false);
@@ -57,6 +58,9 @@ const Employees = () => {
     contactNumber: "",
     email: "",
   });
+
+  const [deletingEmployeeNumber, setDeletingEmployeeNumber] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const openAddEmployee = () => {
     setSelectedEmployee(null);
@@ -78,6 +82,8 @@ const Employees = () => {
       email: employee.email,
     });
     setIsEmployeeDialogOpen(true);
+    setDeletingEmployeeNumber("");
+    setIsDeleting(false);
   };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,11 +113,6 @@ const Employees = () => {
   const formHasAnyValue = Object.values(form).some(
     (value) => value.trim() !== ""
   );
-
-  const onPageChange = (newPage: number) => {
-    if (newPage === 0 || employeesData?.count < (newPage - 1) * 10) return;
-    setPage(newPage);
-  };
 
   // Filter employees based on search term
   const filteredEmployees = Array.isArray(employeesData)
@@ -166,11 +167,31 @@ const Employees = () => {
     setIsEmployeeDialogOpen(false);
   };
 
+  const onDeleteEmployee = (id: string | undefined) => {
+    if (!id) return;
+    if (deletingEmployeeNumber !== selectedEmployee?.employeeNumber) return;
+    if (user?.role === "CASHIER") return;
+    deleteEmployee(id);
+
+    onEmployeeDialogClose();
+
+    toast.success("Employee deleted successfully!");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Employees Data</h2>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Header title="Employee Management" user={{ email: user?.email }} />
 
-      <Card className="mt-3 mb-4">
+      <Card className="border-none mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)]">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex flex-col">
@@ -180,7 +201,8 @@ const Employees = () => {
               </small>
             </div>
             <Button variant="default" onClick={openAddEmployee}>
-              Add Employee
+              <Plus className="w-4" />
+              Create Employee
             </Button>
           </CardTitle>
         </CardHeader>
@@ -190,51 +212,34 @@ const Employees = () => {
             className="mb-4"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Employee Number</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Total Credit</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees?.map((employee: Employee) => (
-                <TableRow
-                  key={employee.id}
-                  onClick={() => onEmployeeClick(employee)}
-                  className="cursor-pointer hover:bg-muted"
-                >
-                  <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.employeeNumber}</TableCell>
-                  <TableCell>{employee.contactNumber}</TableCell>
-                  <TableCell>{employee.totalCredit}</TableCell>
+          <div className="max-h-150 overflow-auto pr-2 custom-scrollbar">
+            <Table>
+              <TableHeader className="dark:bg-neutral-800">
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Employee Number</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Total Credit</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  className="cursor-pointer"
-                  role="button"
-                  onClick={() => onPageChange(page - 1)}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink>{page}</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  className="cursor-pointer"
-                  role="button"
-                  onClick={() => onPageChange(page + 1)}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+              </TableHeader>
+              <TableBody>
+                {filteredEmployees?.map((employee: Employee) => (
+                  <TableRow
+                    key={employee.id}
+                    onClick={() => onEmployeeClick(employee)}
+                    className="cursor-pointer hover:bg-muted"
+                  >
+                    <TableCell className="font-medium">
+                      {employee.name}
+                    </TableCell>
+                    <TableCell>{employee.employeeNumber}</TableCell>
+                    <TableCell>{employee.contactNumber}</TableCell>
+                    <TableCell>{employee.totalCredit}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -271,7 +276,7 @@ const Employees = () => {
                 value={form.employeeNumber}
                 onChange={handleFormChange}
                 required
-                disabled={fileUploaded.length > 0}
+                disabled={fileUploaded.length > 0 || isDeleting}
               />
             </div>
             <div>
@@ -284,7 +289,7 @@ const Employees = () => {
                 value={form.name}
                 onChange={handleFormChange}
                 required
-                disabled={fileUploaded.length > 0}
+                disabled={fileUploaded.length > 0 || isDeleting}
               />
             </div>
             <div>
@@ -297,7 +302,7 @@ const Employees = () => {
                 value={form.contactNumber}
                 onChange={handleFormChange}
                 required
-                disabled={fileUploaded.length > 0}
+                disabled={fileUploaded.length > 0 || isDeleting}
               />
             </div>
             <div>
@@ -311,22 +316,21 @@ const Employees = () => {
                 value={form.email}
                 onChange={handleFormChange}
                 required
-                disabled={fileUploaded.length > 0}
+                disabled={fileUploaded.length > 0 || isDeleting}
               />
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onEmployeeDialogClose}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={fileUploaded.length > 0}>
-                {selectedEmployee ? "Update" : "Add"}
-              </Button>
-            </div>
+            {isDeleting ? null : (
+              <div className="flex justify-end space-x-2">
+                <Button
+                  className="w-full"
+                  type="submit"
+                  disabled={fileUploaded.length > 0}
+                >
+                  {selectedEmployee ? "Update" : "Add"}
+                </Button>
+              </div>
+            )}
           </form>
 
           {selectedEmployee || formHasAnyValue ? null : (
@@ -359,6 +363,53 @@ const Employees = () => {
                 </Button>
               </div>
             </>
+          )}
+
+          {selectedEmployee?.id && (
+            <Collapsible open={isDeleting} onOpenChange={setIsDeleting}>
+              <CollapsibleTrigger className="w-full" asChild>
+                <Button variant="ghost" className="w-full text-red-300">
+                  {isDeleting ? "Hide" : "Remove Employee"}{" "}
+                  {isDeleting ? (
+                    <ChevronUp className="ml-2 h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-3 border border-red-600 rounded-sm mt-4">
+                  <h3 className="text-red-400 text-bold">Danger Zone</h3>
+                  <small className="text-gray-300">
+                    Please proceed with caution. Deleting this employee may have
+                    serious consequences.
+                  </small>
+
+                  <div>
+                    <Label className="mb-2 mt-4">
+                      Please enter the employee number of the employee to be
+                      deleted
+                    </Label>
+                    <Input
+                      onChange={(e) =>
+                        setDeletingEmployeeNumber(e.target.value)
+                      }
+                    />
+                  </div>
+
+                  <Button
+                    className="mt-3 w-full"
+                    variant="destructive"
+                    onClick={() => onDeleteEmployee(selectedEmployee.id)}
+                    disabled={
+                      deletingEmployeeNumber !== selectedEmployee.employeeNumber
+                    }
+                  >
+                    Delete Employee
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </DialogContent>
       </Dialog>

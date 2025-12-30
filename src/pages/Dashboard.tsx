@@ -43,6 +43,8 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { useEmployeesReport } from "@/hooks/useEmployeesReport";
 import { useProductsReport } from "@/hooks/useProductsReport";
+import { COLORS } from "@/lib/contants";
+import { Spinner } from "@/components/ui/spinner";
 
 const Dashboard = () => {
   const [startDate, setStartDate] = useState(
@@ -76,6 +78,20 @@ const Dashboard = () => {
     "inventory"
   );
 
+  if (
+    isLoadingToday ||
+    isLoadingYesterday ||
+    isLoadingLowStock ||
+    isLoadingProductSales
+  ) {
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Dashboard Data</h2>
+      </div>
+    );
+  }
+
   const generateReport = async () => {
     try {
       if (reportType === "inventory") {
@@ -107,15 +123,6 @@ const Dashboard = () => {
       alert("Failed to generate report. Please try again.");
     }
   };
-
-  if (
-    isLoadingToday ||
-    isLoadingYesterday ||
-    isLoadingLowStock ||
-    isLoadingProductSales
-  ) {
-    return <div>Loading...</div>;
-  }
 
   function getPercentChange(today: number, yesterday: number) {
     if (yesterday === 0) return 0;
@@ -153,19 +160,6 @@ const Dashboard = () => {
     })
   );
 
-  const COLORS = [
-    "#0088FE",
-    "#00C49F",
-    "#FFBB28",
-    "#FF8042",
-    "#e64a7eff",
-    "#0b9bd4ff",
-    "#FF8042",
-    "#c6ff42ff",
-    "#42ff71ff",
-    "#8442ffff",
-  ];
-
   return (
     <div>
       <Header title="Dashboard" user={{ email: user?.email }} />
@@ -173,7 +167,7 @@ const Dashboard = () => {
         <div className="mb-4 flex justify-end">
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button>
                 <FileText className="w-4 h-4 mr-2" />
                 Generate Report
               </Button>
@@ -210,10 +204,7 @@ const Dashboard = () => {
                     <Label className="text-sm font-medium">Date Range</Label>
                     <div className="flex space-x-2 mt-1">
                       <div className="flex-1">
-                        <Label
-                          htmlFor="startDate"
-                          className="text-xs text-gray-600"
-                        >
+                        <Label htmlFor="startDate" className="mb-1 text-xs">
                           Start Date
                         </Label>
                         <Input
@@ -224,10 +215,7 @@ const Dashboard = () => {
                         />
                       </div>
                       <div className="flex-1">
-                        <Label
-                          htmlFor="endDate"
-                          className="text-xs text-gray-600"
-                        >
+                        <Label htmlFor="endDate" className="mb-1 text-xs">
                           End Date
                         </Label>
                         <Input
@@ -245,18 +233,21 @@ const Dashboard = () => {
                   <Button
                     variant="outline"
                     onClick={() => setIsModalOpen(false)}
+                    className="flex-1"
                   >
                     Cancel
                   </Button>
-                  <Button onClick={generateReport}>Generate PDF</Button>
+                  <Button onClick={generateReport} className="flex-1">
+                    Generate PDF
+                  </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
         </div>
       )}
-      <div className="mb-3 flex flex-col gap-3 xl:flex-row xl:justify-between">
-        <Card className="w-full xl:w-1/4">
+      <div className="mb-5 flex flex-col gap-6 xl:flex-row xl:justify-between">
+        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardDescription>Total Revenue</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -281,7 +272,7 @@ const Dashboard = () => {
             </div>
           </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/4">
+        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardDescription>Total Customers</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -292,7 +283,7 @@ const Dashboard = () => {
             <div className="text-muted-foreground">Based on invoices</div>
           </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/4">
+        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardDescription>Products low on stock</CardDescription>
             <CardTitle
@@ -309,7 +300,7 @@ const Dashboard = () => {
             </div>
           </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/4">
+        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardDescription>Growth Rate in Customers</CardDescription>
             <CardTitle
@@ -336,8 +327,8 @@ const Dashboard = () => {
           </CardFooter>
         </Card>
       </div>
-      <div className="mb-3 flex flex-col gap-3 xl:flex-row xl:justify-between">
-        <Card className="w-full xl:w-1/2">
+      <div className="mb-3 flex flex-col gap-6 xl:flex-row xl:justify-between">
+        <Card className="w-full xl:w-1/2 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardTitle>Fast moving stocks</CardTitle>
           </CardHeader>
@@ -374,7 +365,7 @@ const Dashboard = () => {
             </div>
           </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/2 ">
+        <Card className="w-full xl:w-1/2 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardTitle className="flex items-start gap-3 space-x-2 flex-col">
               <span>Product List</span>
@@ -383,12 +374,12 @@ const Dashboard = () => {
               </small>
             </CardTitle>
           </CardHeader>
-          <CardContent className="max-h-96 overflow-auto">
+          <CardContent className="max-h-96 overflow-auto custom-scrollbar">
             <Table>
               <TableCaption>
                 A list of your recent products which are low in stocks
               </TableCaption>
-              <TableHeader>
+              <TableHeader className="dark:bg-neutral-800">
                 <TableRow>
                   <TableHead>Item</TableHead>
                   <TableHead>Barcode</TableHead>
