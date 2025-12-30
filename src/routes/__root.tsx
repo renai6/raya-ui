@@ -76,15 +76,24 @@ function RootComponent() {
                   </DropdownMenu>
                 ) : (
                   <>
-                    <Link to="/sales" className="[&.active]:font-bold">
+                    <Link
+                      to="/sales"
+                      className="[&.active]:font-bold hover:text-amber-500"
+                    >
                       POS
                     </Link>
-                    <Link to="/dashboard" className="[&.active]:font-bold">
+                    <Link
+                      to="/dashboard"
+                      className="[&.active]:font-bold hover:text-amber-500"
+                    >
                       Dashboard
                     </Link>
                     {user?.role === "ADMIN" && (
                       <>
-                        <Link to="/inventory" className="[&.active]:font-bold">
+                        <Link
+                          to="/inventory"
+                          className="[&.active]:font-bold hover:text-amber-500"
+                        >
                           Inventory
                         </Link>
                       </>

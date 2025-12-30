@@ -2,24 +2,33 @@ import Header from "@/components/header/Header";
 import InventoryBarCode from "@/components/inventory/InventoryBarCode";
 
 import { useCreateProduct } from "@/hooks/useCreateProduct";
-import { useProducts } from "@/hooks/useProducts";
+import { useDeleteProduct, useProducts } from "@/hooks/useProducts";
 import { useUpdateProduct } from "@/hooks/useUpdateProduct";
 import { useAuthUser } from "@/stores/authStore";
 import type { Product } from "@/types";
 import { useState, useEffect } from "react";
 import AddProductDialog from "@/components/inventory/AddProductDialog";
 import ProductsTable from "@/components/inventory/ProductsTable";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 const Inventory = () => {
   const user = useAuthUser();
   const { data: productsData, isLoading } = useProducts();
-  const { mutate: createProduct } = useCreateProduct();
-  const { mutate: updateProduct } = useUpdateProduct();
+  const { mutate: createProduct, isPending: isCreatePending } =
+    useCreateProduct();
+  const { mutate: updateProduct, isPending: isUpdatePending } =
+    useUpdateProduct();
+  const { mutate: deleteProduct, isPending: isDeletePending } =
+    useDeleteProduct();
 
   const [isItemAddDialogOpen, setIsItemAddDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  const [deletingBarcode, setDeletingBarcode] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,6 +40,8 @@ const Inventory = () => {
 
   const openAddProduct = () => {
     setIsItemAddDialogOpen(true);
+    setDeletingBarcode("");
+    setIsDeleting(false);
   };
 
   const [form, setForm] = useState<Product>({
@@ -57,16 +68,7 @@ const Inventory = () => {
     }));
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Add API call for add/edit product here
-    if (user?.role === "CASHIER") return;
-    if (selectedProduct?.id) {
-      updateProduct(form);
-    } else {
-      createProduct(form);
-    }
-
+  const resetDialog = () => {
     setIsItemAddDialogOpen(false);
     setForm({
       name: "",
@@ -77,6 +79,30 @@ const Inventory = () => {
     });
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Add API call for add/edit product here
+    if (user?.role === "CASHIER") return;
+    if (selectedProduct?.id) {
+      updateProduct(form);
+    } else {
+      createProduct(form);
+    }
+
+    resetDialog();
+  };
+
+  const onDeleteProduct = (id: string | undefined) => {
+    if (!id) return;
+    if (deletingBarcode !== selectedProduct?.barcode) return;
+    if (user?.role === "CASHIER") return;
+    deleteProduct(id);
+
+    resetDialog();
+
+    toast.success("Product deleted successfully!");
+  };
+
   const onItemClick = (product: Product) => {
     if (user?.role === "CASHIER") return;
     setSelectedProduct(product);
@@ -85,7 +111,12 @@ const Inventory = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Products Data</h2>
+      </div>
+    );
   }
   // Filter products based on search term
   // This is a simple client-side filter; for large datasets, consider server-side filtering
@@ -119,6 +150,14 @@ const Inventory = () => {
         selectedProduct={selectedProduct}
         handleFormSubmit={handleFormSubmit}
         handleFormChange={handleFormChange}
+        onDeleteProduct={onDeleteProduct}
+        deletingBarcode={deletingBarcode}
+        setDeletingBarcode={setDeletingBarcode}
+        isDeleting={isDeleting}
+        setIsDeleting={setIsDeleting}
+        isCreatePending={isCreatePending}
+        isUpdatePending={isUpdatePending}
+        isDeletePending={isDeletePending}
       />
     </div>
   );

@@ -8,7 +8,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import type { Product } from "@/types";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 type Props = {
   isItemAddDialogOpen: boolean;
@@ -23,6 +29,14 @@ type Props = {
   selectedProduct: Product | null;
   handleFormSubmit: (e: React.FormEvent) => void;
   handleFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDeleteProduct: (id: string | undefined) => void;
+  deletingBarcode: string;
+  setDeletingBarcode: (barcode: string) => void;
+  isDeleting: boolean;
+  setIsDeleting: (isDeleting: boolean) => void;
+  isCreatePending: boolean;
+  isUpdatePending: boolean;
+  isDeletePending: boolean;
 };
 
 const AddProductDialog = (props: Props) => {
@@ -33,6 +47,14 @@ const AddProductDialog = (props: Props) => {
     selectedProduct,
     handleFormSubmit,
     handleFormChange,
+    onDeleteProduct,
+    deletingBarcode,
+    setDeletingBarcode,
+    isDeleting,
+    setIsDeleting,
+    isCreatePending,
+    isUpdatePending,
+    isDeletePending,
   } = props;
 
   return (
@@ -56,6 +78,7 @@ const AddProductDialog = (props: Props) => {
                 onChange={handleFormChange}
                 placeholder="Product Name"
                 required
+                disabled={isDeleting}
               />
             </div>
             <div>
@@ -80,6 +103,7 @@ const AddProductDialog = (props: Props) => {
                   onChange={handleFormChange}
                   placeholder="Retail Price"
                   required
+                  disabled={isDeleting}
                 />
               </div>
               <div className="flex-1">
@@ -92,6 +116,7 @@ const AddProductDialog = (props: Props) => {
                   onChange={handleFormChange}
                   placeholder="Wholesale Price"
                   required
+                  disabled={isDeleting}
                 />
               </div>
             </div>
@@ -104,12 +129,63 @@ const AddProductDialog = (props: Props) => {
                 onChange={handleFormChange}
                 placeholder="Stock"
                 required
+                disabled={isDeleting}
               />
             </div>
-            <Button type="submit" className="w-full">
-              {selectedProduct?.id ? "Update Product" : "Add Product"}
-            </Button>
+            {isDeleting ? null : (
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isCreatePending || isUpdatePending}
+              >
+                {selectedProduct?.id ? "Update Product" : "Add Product"}
+              </Button>
+            )}
           </form>
+          {selectedProduct?.id && (
+            <Collapsible open={isDeleting} onOpenChange={setIsDeleting}>
+              <CollapsibleTrigger className="w-full" asChild>
+                <Button variant="ghost" className="w-full text-red-300">
+                  {isDeleting ? "Hide" : "Delete Product"}{" "}
+                  {isDeleting ? (
+                    <ChevronUp className="ml-2 h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-3 border border-red-600 rounded-sm mt-4">
+                  <h3 className="text-red-500 text-bold">Danger Zone</h3>
+                  <small className="text-gray-300">
+                    Please be careful deleting. Deleting a product cannot be
+                    undone.
+                  </small>
+
+                  <div>
+                    <Label className="mb-2 mt-4">
+                      Please enter the barcode of the product you want to delete
+                    </Label>
+                    <Input
+                      onChange={(e) => setDeletingBarcode(e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    className="mt-3 w-full"
+                    variant="destructive"
+                    onClick={() => onDeleteProduct(selectedProduct.id)}
+                    disabled={
+                      deletingBarcode !== selectedProduct.barcode ||
+                      isDeletePending
+                    }
+                  >
+                    Delete Product
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       </DialogContent>
     </Dialog>

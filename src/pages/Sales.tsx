@@ -1,12 +1,6 @@
 import Cart from "@/components/sales/Cart";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useProducts } from "@/hooks/useProducts";
 import { Check, CreditCard, X, HandCoins } from "lucide-react";
@@ -32,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
 import SalesBarCode from "@/components/sales/BarCode";
 import { useEmployee } from "@/hooks/useEmployee";
+import { Spinner } from "@/components/ui/spinner";
 
 const Sales = () => {
   const { setCashReceived, clearCart, setEditQuantityDialogOpen } =
@@ -41,12 +36,13 @@ const Sales = () => {
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
   const { data: productsData, isLoading } = useProducts();
-  const { mutate: createSale } = useCreateSale();
+  const { mutate: createSale, isPending } = useCreateSale();
   const user = useAuthUser();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [isWaitingBarcode, setIsWaitingBarcode] = useState(true);
   const [paymentType, setPaymentType] = useState<"CASH" | "CREDIT">("CASH");
   const [employeeBarcode, setEmployeeBarcode] = useState("");
+  const [employeeBarcodeInput, setEmployeeBarcodeInput] = useState("");
 
   const { data: employee } = useEmployee(employeeBarcode);
 
@@ -62,6 +58,7 @@ const Sales = () => {
     setCashReceived(0);
     setPaymentType("CASH");
     setEmployeeBarcode("");
+    setEmployeeBarcodeInput("");
   };
 
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +107,14 @@ const Sales = () => {
     };
   }, [cartItems, cashReceived, isEditQuantityDialogOpen, paymentType]);
 
+  useEffect(() => {
+    console.log(employeeBarcodeInput);
+    const timeout = setTimeout(() => {
+      setEmployeeBarcode(employeeBarcodeInput);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [employeeBarcodeInput]);
+
   const onOpenPaymentDialog = () => {
     if (cartItems.length === 0) return;
     if (
@@ -134,7 +139,12 @@ const Sales = () => {
   const total = subtotal;
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Products Data</h2>
+      </div>
+    );
   }
 
   return (
@@ -157,7 +167,7 @@ const Sales = () => {
         </div>
 
         {/* Right Column - Summary Card */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Card className="shadow-lg sticky top-4 gap-1 shadow-[0_8px_25px_rgba(0,0,0,0.6)] border-none">
             <CardHeader>
               <CardTitle className="flex justify-between items-center space-x-2">
@@ -228,6 +238,34 @@ const Sales = () => {
               )}
             </CardContent>
           </Card>
+          <div className="mt-5 pl-5 flex flex-col space-y-2">
+            <h2 className="text-bold">Key Controls</h2>
+
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">C</span> : Activate
+              cash input
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Q</span> : Open
+              quantity dialog
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">F9</span> : Activate
+              barcode input
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">F8</span> : Proceed to
+              payment summary
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Tab</span> : Navigating
+              the cursor between inputs and buttons
+            </p>
+            <p className="text-sm">
+              <span className="text-bold text-amber-600">Esc</span> : Closing
+              dialogs
+            </p>
+          </div>
         </div>
       </div>
       <ItemQuantityDialog />
@@ -318,16 +356,16 @@ const Sales = () => {
                 </Card>
 
                 {paymentType === "CREDIT" && (
-                  <Card>
-                    <CardHeader>
+                  <Card className="border-none p-2 gap-0">
+                    <CardHeader className="p-2">
                       <CardTitle>
-                        <span>Employee Number</span>
+                        <div className="flex justify-between">
+                          <span>Employee Number</span>
+                          <span>{employeeBarcode}</span>
+                        </div>
                       </CardTitle>
-                      <CardDescription>
-                        <span>{employeeBarcode}</span>
-                      </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-2">
                       <div className="flex justify-between text-sm">
                         <span>Employee Name</span>
                         <span>{employee?.name}</span>
@@ -357,8 +395,16 @@ const Sales = () => {
                   <X className="w-5 h-5 mr-2" />
                   Cancel
                 </Button>
-                <Button onClick={processPayment} className="flex-1">
-                  <Check className="w-5 h-5 mr-2" />
+                <Button
+                  onClick={processPayment}
+                  className="flex-1"
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <Spinner className="size-5 mr-2" />
+                  ) : (
+                    <Check className="w-5 h-5 mr-2" />
+                  )}
                   Confirm Payment
                 </Button>
               </div>
