@@ -84,7 +84,6 @@ const AddProductDialog = (props: Props) => {
             <div>
               <Label className="mb-2">Barcode</Label>
               <Input
-                disabled
                 name="barcode"
                 value={form?.barcode}
                 onChange={handleFormChange}
