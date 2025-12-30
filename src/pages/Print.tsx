@@ -31,23 +31,28 @@ const Print = () => {
 
   return (
     <Paper>
-      <Text align="center" bold>
+      <Text align="center" bold style={{ fontSize: 9 }}>
         Steel Colors and Metal Products
       </Text>
-      <Text align="center" bold>
+      <Text
+        style={{ fontSize: transaction?.cashReceived === 0 ? 10 : 11 }}
+        align="center"
+        bold
+      >
         Canteen
       </Text>
-      <Text align="center">Test Morning Glory, Putik, ZC </Text>
-      <Text align="center">TIN: 000-000-000-0000</Text>
-      <Text align="center">Mobile: 0000-000-0000</Text>
-      <Text align="center">
+      <Text align="center" style={{ fontSize: 11 }}>
+        Boalan, Zamboanga City{" "}
+      </Text>
+      <Text align="center" style={{ fontSize: 11 }}>
         {date.toDateString()} {date.toLocaleTimeString()}
       </Text>
-      <Space size={[20, 10]} />
+      <Space size={[10, 10]} />
       <Dot />
+      <Space size={[10, 10]} />
       {transaction?.sales.map((item: any) => (
         <div key={item.id}>
-          <RowText>
+          <RowText style={{ fontSize: 11 }}>
             <Text bold>{item.product.name}</Text>
             <Text>{(item.total * item.quantity).toFixed(2)}</Text>
           </RowText>
@@ -61,18 +66,22 @@ const Print = () => {
       <hr />
       <Space size={[5, 5]} />
       <RowText>
-        <Text bold>Total</Text>
+        <Text bold style={{ fontSize: 11 }}>
+          Total
+        </Text>
         <Text>{transaction?.total.toFixed(2)}</Text>
       </RowText>
       <Space size={[5, 5]} />
       <Dot />
       <Space size={[5, 5]} />
       <RowText>
-        <Text bold>Cash Received</Text>
+        <Text bold style={{ fontSize: 11 }}>
+          Cash Received
+        </Text>
         <Text>₱{transaction?.cashReceived.toFixed(2)}</Text>
       </RowText>
       <RowText>
-        <Text bold>Change</Text>
+        <Text style={{ fontSize: 11 }}>Change</Text>
         <Text>
           ₱
           {transaction?.cashReceived > 0
@@ -84,7 +93,7 @@ const Print = () => {
       <Dot />
       <Space size={[10, 10]} />
       <Space size={[10, 10]} />
-      <Text align="center">
+      <Text align="center" style={{ fontSize: 11 }}>
         {transaction?.cashReceived === 0
           ? "Transaction recorded as credit"
           : ""}
@@ -100,14 +109,27 @@ const Print = () => {
       )}
 
       <Space size={[10, 10]} />
-      <Space size={[10, 10]} />
-      <Text align="center" bold>
+      <Text style={{ fontSize: 9 }} align="center">
         OR No: {transaction?.id}{" "}
       </Text>
       <Space size={[10, 10]} />
+      <Dot />
       <Space size={[10, 10]} />
-      <Text align="center">THIS IS YOUR OFFICIAL INVOICE</Text>
+      <Text align="center" style={{ fontSize: 11 }}>
+        This receipt is your proof of purchase. Merchandise received in good
+        condition.
+      </Text>
+      <Space size={[10, 10]} />
+
+      <Space size={[10, 10]} />
+      <Text
+        align="center"
+        style={{ fontSize: 11, marginRight: 10, marginLeft: 10 }}
+      >
+        Please come again!
+      </Text>
     </Paper>
   );
 };
+
 export default Print;
