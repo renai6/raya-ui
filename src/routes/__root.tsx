@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MenuIcon } from "lucide-react";
+import logo from "@/assets/raya_oflogo_s.png";
 
 export const Route = createRootRoute({
   component: () => <RootComponent />,
@@ -37,9 +38,13 @@ function RootComponent() {
               } flex items-center justify-between py-8 bg-background mb-2`}
             >
               {/* Left: Logo */}
-              <div className="flex items-start cursor-pointer flex-col">
-                <h1 className="text-2xl font-bold text-amber-500">NY RAYA</h1>
-                <small>Yusop Store</small>
+              <div className="flex items-center cursor-pointer gap-3">
+                <img
+                  src={logo}
+                  alt="Raya Logo"
+                  className="h-12 w-12 object-contain mb-1"
+                />
+                <h2>Yusop Store</h2>
               </div>
               <div className="flex items-center gap-5">
                 {!isDesktop ? (
