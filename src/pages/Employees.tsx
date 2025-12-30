@@ -39,7 +39,7 @@ import { toast } from "sonner";
 
 const Employees = () => {
   const user = useAuthUser();
-  const { data: employeesData } = useEmployees();
+  const { data: employeesData, isLoading } = useEmployees();
   const { mutate: createEmployee } = useCreateEmployee();
   const { mutate: createBulkEmployees } = useCreateBulkEmployees();
   const { mutate: updateEmployee } = useUpdateEmployee();
@@ -177,6 +177,15 @@ const Employees = () => {
 
     toast.success("Employee deleted successfully!");
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Employees Data</h2>
+      </div>
+    );
+  }
 
   return (
     <div>

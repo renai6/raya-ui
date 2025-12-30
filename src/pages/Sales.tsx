@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
 import SalesBarCode from "@/components/sales/BarCode";
 import { useEmployee } from "@/hooks/useEmployee";
+import { Spinner } from "@/components/ui/spinner";
 
 const Sales = () => {
   const { setCashReceived, clearCart, setEditQuantityDialogOpen } =
@@ -36,14 +37,16 @@ const Sales = () => {
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
   const { data: productsData, isLoading } = useProducts();
-  const { mutate: createSale } = useCreateSale();
+  const { mutate: createSale, isPending } = useCreateSale();
   const user = useAuthUser();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [isWaitingBarcode, setIsWaitingBarcode] = useState(true);
   const [paymentType, setPaymentType] = useState<"CASH" | "CREDIT">("CASH");
   const [employeeBarcode, setEmployeeBarcode] = useState("");
+  const [employeeBarcodeInput, setEmployeeBarcodeInput] = useState("");
 
-  const { data: employee } = useEmployee(employeeBarcode);
+  const { data: employee, isLoading: isEmployeeLoading } =
+    useEmployee(employeeBarcode);
 
   const processPayment = async () => {
     setPaymentDialogOpen(false);
@@ -57,6 +60,7 @@ const Sales = () => {
     setCashReceived(0);
     setPaymentType("CASH");
     setEmployeeBarcode("");
+    setEmployeeBarcodeInput("");
   };
 
   const cashInputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +109,14 @@ const Sales = () => {
     };
   }, [cartItems, cashReceived, isEditQuantityDialogOpen, paymentType]);
 
+  useEffect(() => {
+    console.log(employeeBarcodeInput);
+    const timeout = setTimeout(() => {
+      setEmployeeBarcode(employeeBarcodeInput);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [employeeBarcodeInput]);
+
   const onOpenPaymentDialog = () => {
     if (cartItems.length === 0) return;
     if (
@@ -129,7 +141,12 @@ const Sales = () => {
   const total = subtotal;
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Products Data</h2>
+      </div>
+    );
   }
 
   return (
@@ -194,6 +211,7 @@ const Sales = () => {
                     setPaymentType(value);
                     setCashReceived(0);
                     setEmployeeBarcode("");
+                    setEmployeeBarcodeInput("");
                   }}
                   className="flex space-x-6"
                 >
@@ -215,12 +233,14 @@ const Sales = () => {
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Employee Number</Label>
                   <Input
-                    value={employeeBarcode}
+                    value={employeeBarcodeInput}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (isNaN(Number(e.target.value))) {
+                      const value = e.target.value;
+                      console.log(value);
+                      if (isNaN(Number(value))) {
                         return;
                       }
-                      setEmployeeBarcode(e.target.value);
+                      setEmployeeBarcodeInput(value);
                     }}
                     placeholder="Scan employee barcode"
                     className={`mb-0 ${
@@ -236,11 +256,21 @@ const Sales = () => {
                       Employee exceeded credit limit
                     </small>
                   )}
-                  {employeeBarcode !== "" && !employee?.id && (
-                    <small className="text-red-400">
-                      Employee number not found
-                    </small>
+                  {employeeBarcode !== "" &&
+                    !employee?.id &&
+                    !isEmployeeLoading && (
+                      <small className="text-red-400">
+                        Employee number not found
+                      </small>
+                    )}
+
+                  {isEmployeeLoading && (
+                    <div className="bg-zinc-700/30 rounded-lg p-4 flex gap-1 justify-center flex-col items-center mt-3">
+                      <Spinner className="size-6 text-amber-500" />
+                      <small>Fetching employee data</small>
+                    </div>
                   )}
+
                   {employee?.id && (
                     <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
                       <div className="flex justify-between text-sm">
@@ -462,8 +492,16 @@ const Sales = () => {
                   <X className="w-5 h-5 mr-2" />
                   Cancel
                 </Button>
-                <Button onClick={processPayment} className="flex-1">
-                  <Check className="w-5 h-5 mr-2" />
+                <Button
+                  onClick={processPayment}
+                  className="flex-1"
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <Spinner className="size-5 mr-2" />
+                  ) : (
+                    <Check className="w-5 h-5 mr-2" />
+                  )}
                   Confirm Payment
                 </Button>
               </div>
