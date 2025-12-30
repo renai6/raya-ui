@@ -97,6 +97,11 @@ const Employees = () => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedEmployee?.id) {
+      if (form.employeeNumber !== selectedEmployee.employeeNumber) {
+        toast.error("Employee Number cannot be updated.");
+        return;
+      }
+
       updateEmployee({ ...form, id: selectedEmployee.id });
     } else {
       createEmployee(form);
@@ -276,7 +281,11 @@ const Employees = () => {
                 value={form.employeeNumber}
                 onChange={handleFormChange}
                 required
-                disabled={fileUploaded.length > 0 || isDeleting}
+                disabled={
+                  fileUploaded.length > 0 ||
+                  isDeleting ||
+                  form.employeeNumber !== ""
+                }
               />
             </div>
             <div>
@@ -301,7 +310,6 @@ const Employees = () => {
                 name="contactNumber"
                 value={form.contactNumber}
                 onChange={handleFormChange}
-                required
                 disabled={fileUploaded.length > 0 || isDeleting}
               />
             </div>
@@ -315,7 +323,6 @@ const Employees = () => {
                 type="email"
                 value={form.email}
                 onChange={handleFormChange}
-                required
                 disabled={fileUploaded.length > 0 || isDeleting}
               />
             </div>
