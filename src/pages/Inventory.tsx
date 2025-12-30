@@ -10,13 +10,17 @@ import { useState, useEffect } from "react";
 import AddProductDialog from "@/components/inventory/AddProductDialog";
 import ProductsTable from "@/components/inventory/ProductsTable";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 const Inventory = () => {
   const user = useAuthUser();
   const { data: productsData, isLoading } = useProducts();
-  const { mutate: createProduct } = useCreateProduct();
-  const { mutate: updateProduct } = useUpdateProduct();
-  const { mutate: deleteProduct } = useDeleteProduct();
+  const { mutate: createProduct, isPending: isCreatePending } =
+    useCreateProduct();
+  const { mutate: updateProduct, isPending: isUpdatePending } =
+    useUpdateProduct();
+  const { mutate: deleteProduct, isPending: isDeletePending } =
+    useDeleteProduct();
 
   const [isItemAddDialogOpen, setIsItemAddDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -107,7 +111,12 @@ const Inventory = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Products Data</h2>
+      </div>
+    );
   }
   // Filter products based on search term
   // This is a simple client-side filter; for large datasets, consider server-side filtering
@@ -146,6 +155,9 @@ const Inventory = () => {
         setDeletingBarcode={setDeletingBarcode}
         isDeleting={isDeleting}
         setIsDeleting={setIsDeleting}
+        isCreatePending={isCreatePending}
+        isUpdatePending={isUpdatePending}
+        isDeletePending={isDeletePending}
       />
     </div>
   );

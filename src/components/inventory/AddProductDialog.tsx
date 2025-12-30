@@ -34,6 +34,9 @@ type Props = {
   setDeletingBarcode: (barcode: string) => void;
   isDeleting: boolean;
   setIsDeleting: (isDeleting: boolean) => void;
+  isCreatePending: boolean;
+  isUpdatePending: boolean;
+  isDeletePending: boolean;
 };
 
 const AddProductDialog = (props: Props) => {
@@ -49,6 +52,9 @@ const AddProductDialog = (props: Props) => {
     setDeletingBarcode,
     isDeleting,
     setIsDeleting,
+    isCreatePending,
+    isUpdatePending,
+    isDeletePending,
   } = props;
 
   return (
@@ -127,7 +133,11 @@ const AddProductDialog = (props: Props) => {
               />
             </div>
             {isDeleting ? null : (
-              <Button type="submit" className="w-full">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isCreatePending || isUpdatePending}
+              >
                 {selectedProduct?.id ? "Update Product" : "Add Product"}
               </Button>
             )}
@@ -165,7 +175,10 @@ const AddProductDialog = (props: Props) => {
                     className="mt-3 w-full"
                     variant="destructive"
                     onClick={() => onDeleteProduct(selectedProduct.id)}
-                    disabled={deletingBarcode !== selectedProduct.barcode}
+                    disabled={
+                      deletingBarcode !== selectedProduct.barcode ||
+                      isDeletePending
+                    }
                   >
                     Delete Product
                   </Button>

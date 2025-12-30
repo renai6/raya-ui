@@ -43,6 +43,8 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { useEmployeesReport } from "@/hooks/useEmployeesReport";
 import { useProductsReport } from "@/hooks/useProductsReport";
+import { COLORS } from "@/lib/contants";
+import { Spinner } from "@/components/ui/spinner";
 
 const Dashboard = () => {
   const [startDate, setStartDate] = useState(
@@ -76,6 +78,20 @@ const Dashboard = () => {
     "inventory"
   );
 
+  if (
+    isLoadingToday ||
+    isLoadingYesterday ||
+    isLoadingLowStock ||
+    isLoadingProductSales
+  ) {
+    return (
+      <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
+        <Spinner className="size-10 text-amber-500" />
+        <h2>Fetching Dashboard Data</h2>
+      </div>
+    );
+  }
+
   const generateReport = async () => {
     try {
       if (reportType === "inventory") {
@@ -107,15 +123,6 @@ const Dashboard = () => {
       alert("Failed to generate report. Please try again.");
     }
   };
-
-  if (
-    isLoadingToday ||
-    isLoadingYesterday ||
-    isLoadingLowStock ||
-    isLoadingProductSales
-  ) {
-    return <div>Loading...</div>;
-  }
 
   function getPercentChange(today: number, yesterday: number) {
     if (yesterday === 0) return 0;
@@ -152,19 +159,6 @@ const Dashboard = () => {
       }, 0),
     })
   );
-
-  const COLORS = [
-    "#0088FE",
-    "#00C49F",
-    "#FFBB28",
-    "#FF8042",
-    "#e64a7eff",
-    "#0b9bd4ff",
-    "#FF8042",
-    "#c6ff42ff",
-    "#42ff71ff",
-    "#8442ffff",
-  ];
 
   return (
     <div>
