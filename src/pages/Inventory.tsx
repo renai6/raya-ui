@@ -59,13 +59,43 @@ const Inventory = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]:
-        name === "retailPrice" || name === "wholesalePrice" || name === "stock"
-          ? Number(value)
-          : value,
-    }));
+
+    let numericValue = "";
+
+    if (
+      name === "retailPrice" ||
+      name === "wholesalePrice" ||
+      name === "stock"
+    ) {
+      // Allow only numbers and decimal point
+      if (!/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
+      // Prevent multiple leading zeros
+      if (value[0] === "0" && value.length > 1) {
+        if (value[1] === ".") {
+          numericValue = value;
+        } else {
+          numericValue = value.substring(1);
+        }
+      } else {
+        numericValue = value;
+      }
+    }
+
+    setForm((prev) => {
+      const newValue = {
+        ...prev,
+        [name]:
+          name === "retailPrice" ||
+          name === "wholesalePrice" ||
+          name === "stock"
+            ? numericValue
+            : value,
+      };
+
+      return newValue;
+    });
   };
 
   const resetDialog = () => {
@@ -84,9 +114,19 @@ const Inventory = () => {
     // TODO: Add API call for add/edit product here
     if (user?.role === "CASHIER") return;
     if (selectedProduct?.id) {
-      updateProduct(form);
+      updateProduct({
+        ...form,
+        retailPrice: Number(form.retailPrice),
+        wholesalePrice: Number(form.wholesalePrice),
+        stock: Number(form.stock),
+      });
     } else {
-      createProduct(form);
+      createProduct({
+        ...form,
+        retailPrice: Number(form.retailPrice),
+        wholesalePrice: Number(form.wholesalePrice),
+        stock: Number(form.stock),
+      });
     }
 
     resetDialog();
