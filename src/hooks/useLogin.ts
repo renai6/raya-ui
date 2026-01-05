@@ -24,7 +24,7 @@ export const useLogin = () => {
     },
     onSuccess: (data) => {
       login(data.user, data.access_token);
-      navigate({ to: "/sales" });
+      navigate({ to: "/" });
     },
   });
 };

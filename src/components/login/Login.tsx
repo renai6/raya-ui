@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import logo from "@/assets/raya_oflogo_s.png";
 
 export function Login({
   email,
@@ -27,8 +28,13 @@ export function Login({
     <form className="w-full max-w-sm" onSubmit={handleSubmit}>
       <Card className="w-full max-w-sm shadow-[0_8px_30px_rgba(0,0,0,0.6)] border-none">
         <CardHeader>
-          <div className="text-center mb-6">
-            <div className="text-3xl font-bold text-amber-500">RAYA</div>
+          <div className="flex items-center justify-start gap-3 mb-6">
+            <img
+              src={logo}
+              alt="Raya Logo"
+              className="h-15 w-15 object-contain mb-1"
+            />
+            <h2 className="font-semibold">Steel Colors and Metal Products</h2>
           </div>
           <CardTitle>Login to your account</CardTitle>
           <CardDescription>
