@@ -375,16 +375,16 @@ const Sales = () => {
                 Review items and total before confirming the payment.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-6">
+            <div className="space-y-6 ">
               {/* Transaction Summary */}
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                 <Card className="border-none p-2 gap-0">
                   <CardHeader className="p-2">
                     <CardTitle>Transaction Summary</CardTitle>
                   </CardHeader>
                   <CardContent className="p-2">
                     {/* Items List */}
-                    <div className="space-y-2 max-h-60 custom-scrollbar overflow-y-auto mb-3 pr-2">
+                    <div className="space-y-2 max-h-50 custom-scrollbar overflow-y-auto mb-3 pr-2">
                       {cartItems.map((item, index) => (
                         <div
                           key={`${item.id}-${item.saleType}-${index}`}

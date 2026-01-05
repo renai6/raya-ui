@@ -159,6 +159,8 @@ const Employees = () => {
     setIsCreatingBulkEmployees(false);
     setIsEmployeeDialogOpen(false);
     setFileUploaded([]);
+
+    toast.success("Bulk employees created successfully!");
   };
 
   const onEmployeeDialogClose = () => {
@@ -217,7 +219,7 @@ const Employees = () => {
             className="mb-4"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <div className="max-h-150 overflow-auto pr-2 custom-scrollbar">
+          <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
             <Table>
               <TableHeader className="dark:bg-neutral-800">
                 <TableRow>
@@ -282,9 +284,7 @@ const Employees = () => {
                 onChange={handleFormChange}
                 required
                 disabled={
-                  fileUploaded.length > 0 ||
-                  isDeleting ||
-                  form.employeeNumber !== ""
+                  fileUploaded.length > 0 || isDeleting || !!selectedEmployee
                 }
               />
             </div>

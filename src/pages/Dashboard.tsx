@@ -374,47 +374,51 @@ const Dashboard = () => {
               </small>
             </CardTitle>
           </CardHeader>
-          <CardContent className="max-h-96 overflow-auto custom-scrollbar">
-            <Table>
-              <TableCaption>
-                A list of your recent products which are low in stocks
-              </TableCaption>
-              <TableHeader className="dark:bg-neutral-800">
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Barcode</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead className="text-right">Retail Price</TableHead>
-                  <TableHead className="text-right">Wholesal Price</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lowStockProducts?.map((product: Product) => (
-                  <TableRow
-                    key={product.id}
-                    className="cursor-pointer hover:bg-muted"
-                  >
-                    <TableCell className="font-medium">
-                      {product.name}
-                    </TableCell>
-                    <TableCell>{product.barcode}</TableCell>
-                    <TableCell
-                      className={`${
-                        product.stock === 0 ? "text-red-500" : "text-amber-500"
-                      } text-right`}
-                    >
-                      {product.stock}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {product.retailPrice.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {product.wholesalePrice.toFixed(2)}
-                    </TableCell>
+          <CardContent>
+            <div className="max-h-100 overflow-auto pr-2 custom-scrollbar">
+              <Table>
+                <TableCaption>
+                  A list of your recent products which are low in stocks
+                </TableCaption>
+                <TableHeader className="dark:bg-neutral-800">
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Barcode</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead className="text-right">Retail Price</TableHead>
+                    <TableHead className="text-right">Wholesal Price</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {lowStockProducts?.map((product: Product) => (
+                    <TableRow
+                      key={product.id}
+                      className="cursor-pointer hover:bg-muted"
+                    >
+                      <TableCell className="font-medium">
+                        {product.name}
+                      </TableCell>
+                      <TableCell>{product.barcode}</TableCell>
+                      <TableCell
+                        className={`${
+                          product.stock === 0
+                            ? "text-red-500"
+                            : "text-amber-500"
+                        } text-right`}
+                      >
+                        {product.stock}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {product.retailPrice.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {product.wholesalePrice.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

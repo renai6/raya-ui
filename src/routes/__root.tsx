@@ -31,7 +31,7 @@ function RootComponent() {
     <>
       {!currentPathname.includes("/print") ? (
         <>
-          {!!user?.email && currentPathname !== "/" && (
+          {!!user?.email && (
             <header
               className={`${
                 isDesktop ? "px-20" : "px-4"
@@ -47,7 +47,7 @@ function RootComponent() {
                 <h2>Steel Colors and Metal Products</h2>
               </div>
               <div className="flex items-center gap-5">
-                {!isDesktop ? (
+                {currentPathname === "/" ? null : !isDesktop ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon">
