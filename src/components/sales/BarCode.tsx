@@ -10,12 +10,14 @@ type Props = {
   products: Product[];
   isWaitingBarcode: boolean;
   setIsWaitingBarcode: React.Dispatch<React.SetStateAction<boolean>>;
+  isCashSessionDialogOpen: boolean;
 };
 
 const SalesBarCode = ({
   products,
   isWaitingBarcode,
   setIsWaitingBarcode,
+  isCashSessionDialogOpen,
 }: Props) => {
   const { setCurrentScannedItem, addProductToCart, setQuantity } =
     useSalesActions();
@@ -34,6 +36,8 @@ const SalesBarCode = ({
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isCashSessionDialogOpen) return;
     if (!barcodeInput.trim()) return;
 
     const product = products.find(

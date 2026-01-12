@@ -91,33 +91,18 @@ const AddProductDialog = (props: Props) => {
                 required
               />
             </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Label className="mb-2">Retail Price</Label>
-                <Input
-                  name="retailPrice"
-                  type="number"
-                  step="0.01"
-                  value={form?.retailPrice}
-                  onChange={handleFormChange}
-                  placeholder="Retail Price"
-                  required
-                  disabled={isDeleting}
-                />
-              </div>
-              <div className="flex-1">
-                <Label className="mb-2">Wholesale Price</Label>
-                <Input
-                  name="wholesalePrice"
-                  type="number"
-                  step="0.01"
-                  value={form?.wholesalePrice}
-                  onChange={handleFormChange}
-                  placeholder="Wholesale Price"
-                  required
-                  disabled={isDeleting}
-                />
-              </div>
+            <div>
+              <Label className="mb-2">Retail Price</Label>
+              <Input
+                name="retailPrice"
+                type="number"
+                step="0.01"
+                value={form?.retailPrice}
+                onChange={handleFormChange}
+                placeholder="Retail Price"
+                required
+                disabled={isDeleting}
+              />
             </div>
             <div>
               <Label className="mb-2">Stock</Label>

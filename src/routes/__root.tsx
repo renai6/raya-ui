@@ -17,6 +17,20 @@ import { MenuIcon } from "lucide-react";
 import logo from "@/assets/raya_oflogo_s.png";
 
 export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      {
+        charSet: "utf-8",
+      },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      },
+      {
+        title: "Raya Sales",
+      },
+    ],
+  }),
   component: () => <RootComponent />,
 });
 
@@ -35,7 +49,7 @@ function RootComponent() {
             <header
               className={`${
                 isDesktop ? "px-20" : "px-4"
-              } flex items-center justify-between py-8 bg-background mb-2`}
+              } flex items-center justify-between py-4 bg-background mb-2`}
             >
               {/* Left: Logo */}
               <div className="flex items-center cursor-pointer gap-3">
@@ -55,18 +69,16 @@ function RootComponent() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Link to="/sales" className="[&.active]:font-bold">
-                          POS
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link to="/dashboard" className="[&.active]:font-bold">
-                          Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                      {user?.role === "ADMIN" && (
+                      {user?.role === "ADMIN" ? (
                         <>
+                          <DropdownMenuItem>
+                            <Link
+                              to="/dashboard"
+                              className="[&.active]:font-bold"
+                            >
+                              Dashboard
+                            </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Link
                               to="/inventory"
@@ -84,25 +96,25 @@ function RootComponent() {
                             </Link>
                           </DropdownMenuItem>
                         </>
+                      ) : (
+                        <DropdownMenuItem>
+                          <Link to="/sales" className="[&.active]:font-bold">
+                            POS
+                          </Link>
+                        </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
                   <>
-                    <Link
-                      to="/sales"
-                      className="[&.active]:font-bold hover:text-amber-500"
-                    >
-                      POS
-                    </Link>
-                    <Link
-                      to="/dashboard"
-                      className="[&.active]:font-bold hover:text-amber-500"
-                    >
-                      Dashboard
-                    </Link>
-                    {user?.role === "ADMIN" && (
+                    {user?.role === "ADMIN" ? (
                       <>
+                        <Link
+                          to="/dashboard"
+                          className="[&.active]:font-bold hover:text-amber-500"
+                        >
+                          Dashboard
+                        </Link>
                         <Link
                           to="/inventory"
                           className="[&.active]:font-bold hover:text-amber-500"
@@ -115,7 +127,20 @@ function RootComponent() {
                         >
                           Employees
                         </Link>
+                        <Link
+                          to="/transactions"
+                          className="[&.active]:font-bold hover:text-amber-500"
+                        >
+                          Transactions
+                        </Link>
                       </>
+                    ) : (
+                      <Link
+                        to="/sales"
+                        className="[&.active]:font-bold hover:text-amber-500"
+                      >
+                        POS
+                      </Link>
                     )}
                   </>
                 )}

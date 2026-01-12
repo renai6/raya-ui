@@ -7,6 +7,7 @@ type CreateSaleType = {
   cashReceived: number;
   paymentType: "CASH" | "CREDIT";
   employeeBarcode?: string;
+  cashSessionId: string;
 };
 
 export const useCreateSale = () => {

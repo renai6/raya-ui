@@ -30,3 +30,13 @@ export const useTransactionsByYesterday = () => {
     },
   });
 };
+
+export const useTransactionsByMonth = (month: number, year: number) => {
+  return useQuery({
+    queryKey: ["transactions-month", year, month],
+    queryFn: async () => {
+      const response = await api.get(`/transactions/monthly/${year}/${month}`);
+      return response.data;
+    },
+  });
+};

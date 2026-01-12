@@ -1,12 +1,26 @@
 import Cart from "@/components/sales/Cart";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useProducts } from "@/hooks/useProducts";
-import { Check, CreditCard, X, HandCoins } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  X,
+  HandCoins,
+  ChevronRight,
+  SquareMenu,
+  LogOut,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCreateSale } from "@/hooks/useCreateSale";
-import { useAuthUser } from "@/stores/authStore";
+import { useAuthActions, useAuthUser } from "@/stores/authStore";
 import {
   Dialog,
   DialogContent,
@@ -28,33 +42,67 @@ import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
 import SalesBarCode from "@/components/sales/BarCode";
 import { useEmployee } from "@/hooks/useEmployee";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  formatCurrency,
+  totalDailyCreditRevenue,
+  totalDailyRevenue,
+} from "@/lib/utils";
+import { useTransactionsByDay } from "@/hooks/useTransactions";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useCashSession } from "@/hooks/useCashSession";
+import { useCashSessionMutations } from "@/hooks/useCashSessionMutations";
+import { useNavigate } from "@tanstack/react-router";
 
 const Sales = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuthActions();
   const { setCashReceived, clearCart, setEditQuantityDialogOpen } =
     useSalesActions();
+
+  const { data: transactionsToday, isLoading: isLoadingToday } =
+    useTransactionsByDay();
+  const user = useAuthUser();
+
+  const { data: cashSession, isLoading: isCashSessionLoading } = useCashSession(
+    user?.sub || ""
+  );
+  const { createCashSession, updateCashSession } = useCashSessionMutations();
 
   const isEditQuantityDialogOpen = useIsEditQuantityDialogOpen();
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
   const { data: productsData, isLoading } = useProducts();
   const { mutate: createSale, isPending } = useCreateSale();
-  const user = useAuthUser();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [isWaitingBarcode, setIsWaitingBarcode] = useState(true);
   const [paymentType, setPaymentType] = useState<"CASH" | "CREDIT">("CASH");
   const [employeeBarcode, setEmployeeBarcode] = useState("");
   const [employeeBarcodeInput, setEmployeeBarcodeInput] = useState("");
+  const [isCashCheckoutDialogOpen, setIsCashCheckoutDialogOpen] =
+    useState(false);
+
+  const [cashForm, setCashForm] = useState({
+    openingCash: "",
+    closingCash: "",
+  });
 
   const { data: employee, isLoading: isEmployeeLoading } =
     useEmployee(employeeBarcode);
 
   const processPayment = async () => {
+    if (!cashSession?.id) return;
+
     setPaymentDialogOpen(false);
     createSale({
       sales: cartItems,
       cashReceived,
       paymentType,
       employeeBarcode: paymentType === "CREDIT" ? employeeBarcode : undefined,
+      cashSessionId: cashSession.id,
     });
     clearCart();
     setCashReceived(0);
@@ -68,6 +116,8 @@ const Sales = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       event.stopPropagation();
+
+      if (!cashSession?.id) return;
 
       if (event.code === "KeyQ") {
         if (isEditQuantityDialogOpen) return;
@@ -110,14 +160,54 @@ const Sales = () => {
   }, [cartItems, cashReceived, isEditQuantityDialogOpen, paymentType]);
 
   useEffect(() => {
-    console.log(employeeBarcodeInput);
     const timeout = setTimeout(() => {
       setEmployeeBarcode(employeeBarcodeInput);
     }, 500);
     return () => clearTimeout(timeout);
   }, [employeeBarcodeInput]);
 
+  const onLogout = () => {
+    logout();
+    navigate({ to: "/login" });
+  };
+
+  const handleCashFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCashForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCashFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!cashForm.closingCash) {
+      const openingCashAmount = parseFloat(cashForm.openingCash);
+      if (isNaN(openingCashAmount) || openingCashAmount < 0) {
+        return;
+      }
+
+      createCashSession.mutate({
+        userId: user?.sub || "",
+        openingCash: openingCashAmount,
+      });
+    } else {
+      const closingCashAmount = parseFloat(cashForm.closingCash);
+      if (isNaN(closingCashAmount) || closingCashAmount < 0) {
+        return;
+      }
+
+      updateCashSession.mutate({
+        id: cashSession?.id,
+        closingCash: closingCashAmount,
+      });
+
+      setIsCashCheckoutDialogOpen(false);
+    }
+
+    setCashForm({ openingCash: "", closingCash: "" });
+  };
+
   const onOpenPaymentDialog = () => {
+    if (!cashSession?.id) return;
     if (cartItems.length === 0) return;
     if (
       paymentType === "CASH" &&
@@ -140,7 +230,7 @@ const Sales = () => {
 
   const total = subtotal;
 
-  if (isLoading) {
+  if (isLoading || isLoadingToday || isCashSessionLoading) {
     return (
       <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
         <Spinner className="size-10 text-amber-500" />
@@ -148,6 +238,10 @@ const Sales = () => {
       </div>
     );
   }
+
+  const totalRevenue = totalDailyRevenue(transactionsToday || []);
+
+  const totalCreditAmount = totalDailyCreditRevenue(transactionsToday || []);
 
   return (
     <div className="mx-auto">
@@ -159,6 +253,7 @@ const Sales = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Barcode Scanner */}
           <SalesBarCode
+            isCashSessionDialogOpen={!cashSession?.id}
             products={productsData.products || []}
             isWaitingBarcode={isWaitingBarcode}
             setIsWaitingBarcode={setIsWaitingBarcode}
@@ -236,7 +331,6 @@ const Sales = () => {
                     value={employeeBarcodeInput}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const value = e.target.value;
-                      console.log(value);
                       if (isNaN(Number(value))) {
                         return;
                       }
@@ -335,34 +429,71 @@ const Sales = () => {
               )}
             </CardContent>
           </Card>
-          <div className="mt-5 pl-5 flex flex-col space-y-2">
-            <h2 className="text-bold">Key Controls</h2>
-
-            <p className="text-sm">
-              <span className="text-bold text-amber-600">C</span> : Activate
-              cash input
-            </p>
-            <p className="text-sm">
-              <span className="text-bold text-amber-600">Q</span> : Open
-              quantity dialog
-            </p>
-            <p className="text-sm">
-              <span className="text-bold text-amber-600">F9</span> : Activate
-              barcode input
-            </p>
-            <p className="text-sm">
-              <span className="text-bold text-amber-600">F8</span> : Proceed to
-              payment summary
-            </p>
-            <p className="text-sm">
-              <span className="text-bold text-amber-600">Tab</span> : Navigating
-              the cursor between inputs and buttons
-            </p>
-            <p className="text-sm">
-              <span className="text-bold text-amber-600">Esc</span> : Closing
-              dialogs
-            </p>
-          </div>
+          {cashSession?.id && (
+            <Collapsible>
+              <CollapsibleTrigger className="w-full" asChild>
+                <Button variant="ghost" className="w-full text-amber-500">
+                  Today's Summary
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <Card className="shadow-[0_4px_15px_rgba(0,0,0,0.6)] border-none mt-2">
+                  <CardContent className="flex justify-between items-center">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <SquareMenu className="w-4 text-amber-400" />
+                      <span>Today's Summary</span>
+                    </h2>
+                    <Button onClick={() => setIsCashCheckoutDialogOpen(true)}>
+                      <HandCoins className="w-4" />
+                      Cash Checkout
+                    </Button>
+                  </CardContent>
+                  <CardHeader className="space-x-4">
+                    <div className="flex w-full">
+                      <div className="w-full space-y-3">
+                        <div>
+                          <CardDescription>Opening Cash</CardDescription>
+                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                            {formatCurrency(cashSession.openingCash || 0)}
+                          </CardTitle>
+                        </div>
+                        <div>
+                          <CardDescription>Cash Revenue</CardDescription>
+                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                            {formatCurrency(totalRevenue - totalCreditAmount)}
+                          </CardTitle>
+                        </div>
+                        <div>
+                          <CardDescription>Credit Revenue</CardDescription>
+                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                            {formatCurrency(totalCreditAmount)}
+                          </CardTitle>
+                        </div>
+                        <div>
+                          <CardDescription>Total Revenue</CardDescription>
+                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                            {formatCurrency(totalRevenue)}
+                          </CardTitle>
+                        </div>
+                      </div>
+                      <div className="flex justify-center items-center w-full">
+                        <div className="text-center">
+                          <h2 className="text-lg font-medium">Expected Cash</h2>
+                          <CardTitle className="text-md font-semibold tabular-nums @[250px]/card:text-3xl text-amber-500">
+                            {formatCurrency(
+                              totalRevenue +
+                                cashSession.openingCash -
+                                totalCreditAmount || 0
+                            )}
+                          </CardTitle>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       </div>
       <ItemQuantityDialog />
@@ -505,6 +636,136 @@ const Sales = () => {
                   Confirm Payment
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div>
+        <Dialog open={!cashSession?.id}>
+          <DialogContent
+            onInteractOutside={(e) => {
+              e.preventDefault();
+            }}
+            className="[&>button]:hidden"
+          >
+            <DialogHeader>
+              <DialogTitle>Add Opening Cash</DialogTitle>
+              <DialogDescription>
+                Enter the starting cash amount to begin your shift. You won’t be
+                able to process sales until this is completed.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <form className="space-y-4" onSubmit={handleCashFormSubmit}>
+                <div>
+                  <Label className="mb-2">Opening Cash Amount</Label>
+                  <Input
+                    name="openingCash"
+                    placeholder="₱0.00"
+                    required
+                    type="number"
+                    value={cashForm.openingCash}
+                    onChange={handleCashFormChange}
+                  />
+                  <small className="text-sm text-neutral-500">
+                    Count the physical cash in the drawer before entering.
+                  </small>
+                </div>
+              </form>
+              <div className="flex items-center justify-end space-x-2">
+                <div className="flex justify-end">
+                  <Button type="button" variant="secondary" onClick={onLogout}>
+                    Sign Out
+                    <LogOut className="w-4" />
+                  </Button>
+                </div>
+                <div className="flex justify-end">
+                  <Button type="submit" onClick={handleCashFormSubmit}>
+                    Start Shift
+                    <ChevronRight className="w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div>
+        <Dialog
+          open={isCashCheckoutDialogOpen}
+          onOpenChange={setIsCashCheckoutDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cash Checkout</DialogTitle>
+              <DialogDescription>
+                You are about to close the cash session for this shift. Please
+                count the cash in the drawer and confirm the amount.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border border-[2px] rounded-sm p-3">
+                <h3 className="text-sm font-semibold mb-2">Cash Summary</h3>
+                <div className="flex w-full">
+                  <div className="w-full space-y-1">
+                    <div>
+                      <CardDescription>Opening Cash</CardDescription>
+                      <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                        {formatCurrency(cashSession.openingCash || 0)}
+                      </CardTitle>
+                    </div>
+                    <div>
+                      <CardDescription>Cash Revenue</CardDescription>
+                      <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                        {formatCurrency(totalRevenue - totalCreditAmount)}
+                      </CardTitle>
+                    </div>
+                    <div>
+                      <CardDescription>Credit Revenue</CardDescription>
+                      <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                        {formatCurrency(totalCreditAmount)}
+                      </CardTitle>
+                    </div>
+                    <div>
+                      <CardDescription>Total Revenue</CardDescription>
+                      <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                        {formatCurrency(totalRevenue)}
+                      </CardTitle>
+                    </div>
+                  </div>
+                  <div className="flex justify-center items-center w-full">
+                    <div className="text-center">
+                      <h2 className="text-lg font-medium">Expected Cash</h2>
+                      <CardTitle className="text-md font-semibold tabular-nums @[250px]/card:text-3xl text-amber-500">
+                        {formatCurrency(
+                          totalRevenue +
+                            cashSession.openingCash -
+                            totalCreditAmount || 0
+                        )}
+                      </CardTitle>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <form className="space-y-4" onSubmit={handleCashFormSubmit}>
+                <div>
+                  <Label className="mb-2">Closing Cash Amount</Label>
+                  <Input
+                    name="closingCash"
+                    placeholder="₱0.00"
+                    required
+                    type="number"
+                    value={cashForm.closingCash}
+                    onChange={handleCashFormChange}
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button type="submit">
+                    Checkout
+                    <ChevronRight className="w-4" />
+                  </Button>
+                </div>
+              </form>
             </div>
           </DialogContent>
         </Dialog>

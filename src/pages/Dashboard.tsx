@@ -12,6 +12,7 @@ import {
 import {
   useTransactionsByDay,
   useTransactionsByYesterday,
+  useTransactionsByMonth,
 } from "@/hooks/useTransactions";
 import { useProductsLowStock, useProductsSaleChart } from "@/hooks/useProducts";
 import {
@@ -27,33 +28,20 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { Product, Sale } from "@/types";
 import Header from "@/components/header/Header";
 import { useAuthUser } from "@/stores/authStore";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { FileText } from "lucide-react";
-import { useEmployeesReport } from "@/hooks/useEmployeesReport";
-import { useProductsReport } from "@/hooks/useProductsReport";
 import { COLORS } from "@/lib/contants";
 import { Spinner } from "@/components/ui/spinner";
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Dashboard = () => {
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [endDate, setEndDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-
+  const [selectedMonth, setSelectedMonth] = useState(1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { data: transactionsToday, isLoading: isLoadingToday } =
     useTransactionsByDay();
   const { data: transactionsYesterday, isLoading: isLoadingYesterday } =
@@ -62,27 +50,16 @@ const Dashboard = () => {
     useProductsLowStock();
   const { data: productSales, isLoading: isLoadingProductSales } =
     useProductsSaleChart();
-  const { refetch: refetchEmployeeReport } = useEmployeesReport(
-    startDate,
-    endDate
-  );
-  const { refetch: refetchProductsReport } = useProductsReport(
-    startDate,
-    endDate
-  );
-
+  const { data: transactionsMonth, isLoading: isLoadingMonth } =
+    useTransactionsByMonth(selectedMonth, selectedYear);
   const user = useAuthUser();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [reportType, setReportType] = useState<"inventory" | "employee">(
-    "inventory"
-  );
 
   if (
     isLoadingToday ||
     isLoadingYesterday ||
     isLoadingLowStock ||
-    isLoadingProductSales
+    isLoadingProductSales ||
+    isLoadingMonth
   ) {
     return (
       <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
@@ -91,38 +68,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const generateReport = async () => {
-    try {
-      if (reportType === "inventory") {
-        const filename = `inventory-report-${Date.now()}.pdf`;
-        const { data } = await refetchProductsReport();
-        if (data) {
-          const url = URL.createObjectURL(data);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-      } else {
-        const filename = `employee-report-${Date.now()}.pdf`;
-        const { data } = await refetchEmployeeReport();
-        if (data) {
-          const url = URL.createObjectURL(data);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-      }
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error generating report:", error);
-      alert("Failed to generate report. Please try again.");
-    }
-  };
 
   function getPercentChange(today: number, yesterday: number) {
     if (yesterday === 0) return 0;
@@ -160,96 +105,16 @@ const Dashboard = () => {
     })
   );
 
+  const currentDate = new Date();
+
   return (
     <div>
       <Header title="Dashboard" user={{ email: user?.email }} />
-      {user?.role === "ADMIN" && (
-        <div className="mb-4 flex justify-end">
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <FileText className="w-4 h-4 mr-2" />
-                Generate Report
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Generate PDF Report</DialogTitle>
-                <DialogDescription>
-                  Select the type of report and date to generate a PDF.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">Report Type</Label>
-                  <RadioGroup
-                    value={reportType}
-                    onValueChange={(value: "inventory" | "employee") =>
-                      setReportType(value)
-                    }
-                    className="flex space-x-6 mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="inventory" id="inventory" />
-                      <Label htmlFor="inventory">Inventory</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="employee" id="employee" />
-                      <Label htmlFor="employee">Employee</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                {reportType === "employee" && (
-                  <div>
-                    <Label className="text-sm font-medium">Date Range</Label>
-                    <div className="flex space-x-2 mt-1">
-                      <div className="flex-1">
-                        <Label htmlFor="startDate" className="mb-1 text-xs">
-                          Start Date
-                        </Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="endDate" className="mb-1 text-xs">
-                          End Date
-                        </Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
 
-                <div className="flex justify-end space-x-2 mt-5">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={generateReport} className="flex-1">
-                    Generate PDF
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
       <div className="mb-5 flex flex-col gap-6 xl:flex-row xl:justify-between">
         <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
-            <CardDescription>Total Revenue</CardDescription>
+            <CardDescription>Daily Revenue</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
               {formatCurrency(totalRevenue)}
             </CardTitle>
@@ -269,6 +134,65 @@ const Dashboard = () => {
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="text-muted-foreground">
               Total revenue from invoices within the day
+            </div>
+          </CardFooter>
+        </Card>
+        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+          <CardHeader>
+            <CardDescription className="flex items-center justify-between">
+              Monthly Revenue
+              <div className="flex gap-2">
+                <Select
+                  value={selectedMonth.toString()}
+                  onValueChange={(value) => setSelectedMonth(parseInt(value))}
+                >
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        {new Date(0, i).toLocaleString("default", {
+                          month: "short",
+                        })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedYear.toString()}
+                  onValueChange={(value) => setSelectedYear(parseInt(value))}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => (
+                      <SelectItem
+                        key={currentDate.getFullYear() - i}
+                        value={(currentDate.getFullYear() - i).toString()}
+                      >
+                        {currentDate.getFullYear() - i}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {formatCurrency(transactionsMonth.totalSales)}
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="text-muted-foreground">
+              Total revenue for{" "}
+              {new Date(selectedYear, selectedMonth - 1).toLocaleDateString(
+                "en-US",
+                {
+                  month: "long",
+                  year: "numeric",
+                }
+              )}
             </div>
           </CardFooter>
         </Card>
@@ -297,32 +221,6 @@ const Dashboard = () => {
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="text-muted-foreground">
               Products with low inventory (less than 10 items)
-            </div>
-          </CardFooter>
-        </Card>
-        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
-          <CardHeader>
-            <CardDescription>Growth Rate in Customers</CardDescription>
-            <CardTitle
-              className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${
-                getPercentChange(
-                  transactionsToday?.length || 0,
-                  transactionsYesterday?.length || 0
-                ) < 0
-                  ? "text-red-400"
-                  : "text-green-400"
-              }`}
-            >
-              {getPercentChange(
-                transactionsToday?.length || 0,
-                transactionsYesterday?.length || 0
-              ).toFixed(1)}
-              %
-            </CardTitle>
-          </CardHeader>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="text-muted-foreground">
-              Customers today versus yesterday
             </div>
           </CardFooter>
         </Card>

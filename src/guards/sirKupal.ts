@@ -11,3 +11,9 @@ export const isAdmin = () => {
   if (!token) throw redirect({ to: "/login" });
   if (user?.role !== "ADMIN") throw redirect({ to: "/sales" });
 };
+
+export const isCashier = () => {
+  const { token, user } = useAuthStore.getState();
+  if (!token) throw redirect({ to: "/login" });
+  if (user?.role !== "CASHIER") throw redirect({ to: "/dashboard" });
+};

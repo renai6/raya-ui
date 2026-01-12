@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SalesRouteImport } from './routes/sales'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
@@ -16,7 +17,13 @@ import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrintIdRouteImport } from './routes/print.$id'
+import { Route as PrintCashCheckoutIdRouteImport } from './routes/print-cash-checkout.$id'
 
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SalesRoute = SalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -52,6 +59,11 @@ const PrintIdRoute = PrintIdRouteImport.update({
   path: '/print/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrintCashCheckoutIdRoute = PrintCashCheckoutIdRouteImport.update({
+  id: '/print-cash-checkout/$id',
+  path: '/print-cash-checkout/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +72,8 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/sales': typeof SalesRoute
+  '/transactions': typeof TransactionsRoute
+  '/print-cash-checkout/$id': typeof PrintCashCheckoutIdRoute
   '/print/$id': typeof PrintIdRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +83,8 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/sales': typeof SalesRoute
+  '/transactions': typeof TransactionsRoute
+  '/print-cash-checkout/$id': typeof PrintCashCheckoutIdRoute
   '/print/$id': typeof PrintIdRoute
 }
 export interface FileRoutesById {
@@ -79,6 +95,8 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/sales': typeof SalesRoute
+  '/transactions': typeof TransactionsRoute
+  '/print-cash-checkout/$id': typeof PrintCashCheckoutIdRoute
   '/print/$id': typeof PrintIdRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +108,8 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/sales'
+    | '/transactions'
+    | '/print-cash-checkout/$id'
     | '/print/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +119,8 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/sales'
+    | '/transactions'
+    | '/print-cash-checkout/$id'
     | '/print/$id'
   id:
     | '__root__'
@@ -108,6 +130,8 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/sales'
+    | '/transactions'
+    | '/print-cash-checkout/$id'
     | '/print/$id'
   fileRoutesById: FileRoutesById
 }
@@ -118,11 +142,20 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   SalesRoute: typeof SalesRoute
+  TransactionsRoute: typeof TransactionsRoute
+  PrintCashCheckoutIdRoute: typeof PrintCashCheckoutIdRoute
   PrintIdRoute: typeof PrintIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sales': {
       id: '/sales'
       path: '/sales'
@@ -172,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrintIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/print-cash-checkout/$id': {
+      id: '/print-cash-checkout/$id'
+      path: '/print-cash-checkout/$id'
+      fullPath: '/print-cash-checkout/$id'
+      preLoaderRoute: typeof PrintCashCheckoutIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -182,6 +222,8 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   SalesRoute: SalesRoute,
+  TransactionsRoute: TransactionsRoute,
+  PrintCashCheckoutIdRoute: PrintCashCheckoutIdRoute,
   PrintIdRoute: PrintIdRoute,
 }
 export const routeTree = rootRouteImport

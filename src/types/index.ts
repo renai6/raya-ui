@@ -8,6 +8,7 @@ export interface Product {
   retailPrice: number;
   wholesalePrice: number;
   barcode: string;
+  updatedAt?: string;
 }
 
 export interface Employee {

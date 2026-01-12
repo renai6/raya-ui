@@ -5,7 +5,7 @@ import { Dot, Paper, RowText, Space, Text } from "react-receipt-slip";
 
 const date = new Date();
 
-const Print = () => {
+const PrintSale = () => {
   const { id } = Route.useParams();
   const { data: transaction, isLoading } = useTransaction(id);
 
@@ -132,4 +132,4 @@ const Print = () => {
   );
 };
 
-export default Print;
+export default PrintSale;

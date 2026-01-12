@@ -2,7 +2,7 @@ import Header from "@/components/header/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { ChevronDown, ChevronDownIcon, ChevronUp, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,10 +36,24 @@ import { useCreateBulkEmployees } from "@/hooks/useCreateBulkEmployees";
 import { Spinner } from "@/components/ui/spinner";
 import { useDeleteEmployee } from "@/hooks/useEmployee";
 import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Employees = () => {
+  const [startDate, setStartDate] = useState<undefined | Date>();
+  const [endDate, setEndDate] = useState<undefined | Date>();
+
+  const [isStartCalendarOpen, setIsStartCalendarOpen] = useState(false);
+  const [isEndCalendarOpen, setIsEndCalendarOpen] = useState(false);
+  const [isWithCreditOnly, setIsWithCreditOnly] = useState(false);
+
   const user = useAuthUser();
-  const { data: employeesData, isLoading } = useEmployees();
+  const { data: employeesData, isLoading } = useEmployees(startDate, endDate);
   const { mutate: createEmployee } = useCreateEmployee();
   const { mutate: createBulkEmployees } = useCreateBulkEmployees();
   const { mutate: updateEmployee } = useUpdateEmployee();
@@ -121,9 +135,18 @@ const Employees = () => {
 
   // Filter employees based on search term
   const filteredEmployees = Array.isArray(employeesData)
-    ? employeesData.filter((employee: Employee) =>
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    ? employeesData.filter((employee: Employee) => {
+        if (isWithCreditOnly) {
+          const employeeCredit = employee.totalCredit || 0;
+
+          return (
+            employee.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            employeeCredit > 0
+          );
+        }
+
+        return employee.name.toLowerCase().includes(searchTerm.toLowerCase());
+      })
     : [];
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,6 +208,17 @@ const Employees = () => {
     toast.success("Employee deleted successfully!");
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = ["Employee Number", "Name", "Contact Number", "Email"];
+    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "EmployeesTemplate");
+    XLSX.writeFile(workbook, "EmployeesTemplate.xlsx");
+
+    toast.success("Template downloaded successfully!");
+  };
+
   if (isLoading) {
     return (
       <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
@@ -197,13 +231,100 @@ const Employees = () => {
   return (
     <div>
       <Header title="Employee Management" user={{ email: user?.email }} />
+      <div className="flex justify-between items-end">
+        <div className="flex flex-col gap-3">
+          <Label className="px-1">Select Date</Label>
+          <div className="flex gap-2">
+            <Popover
+              open={isStartCalendarOpen}
+              onOpenChange={setIsStartCalendarOpen}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  id="date"
+                  className="w-48 justify-between font-normal"
+                >
+                  {startDate
+                    ? new Date(startDate).toLocaleDateString()
+                    : "Select date"}
+                  <ChevronDownIcon />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto overflow-hidden p-0"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  captionLayout="dropdown"
+                  onSelect={(date) => {
+                    setStartDate(date || new Date());
+                    setIsStartCalendarOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            <Popover
+              open={isEndCalendarOpen}
+              onOpenChange={setIsEndCalendarOpen}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  id="date"
+                  className="w-48 justify-between font-normal"
+                >
+                  {endDate ? endDate.toLocaleDateString() : "Select date"}
+                  <ChevronDownIcon />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto overflow-hidden p-0"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  captionLayout="dropdown"
+                  disabled={(date) => (startDate ? date < startDate : false)}
+                  onSelect={(date) => {
+                    console.log(date || new Date());
+                    setEndDate(date || new Date());
+                    setIsEndCalendarOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEndDate(undefined);
+                setStartDate(undefined);
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Checkbox
+            id="prices-check"
+            checked={isWithCreditOnly}
+            onCheckedChange={(e) => setIsWithCreditOnly(e as boolean)}
+          />
+          <Label htmlFor="prices-check">With Credit Only</Label>
+        </div>
+      </div>
 
       <Card className="border-none mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)]">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex flex-col">
               <h1 className="mb-2">Employee List</h1>
-              <small className="text-yellow-500 text-xs">
+              <small className="text-amber-500 text-xs">
                 Shows a table of employees with total credit for this payroll
               </small>
             </div>
@@ -346,6 +467,20 @@ const Employees = () => {
                 <hr />
               </div>
               <div className="grid items-center gap-3 py-4">
+                <DialogTitle>Create in bulk</DialogTitle>
+                <DialogDescription className="flex gap-2 flex-col">
+                  <span>
+                    Import employees in bulk using a CSV file. To avoid errors,
+                    please use the provided template and follow the required
+                    format.
+                  </span>
+                  <span
+                    className="text-amber-500 cursor-pointer font-semibold underline"
+                    onClick={handleDownloadTemplate}
+                  >
+                    Download Template
+                  </span>
+                </DialogDescription>
                 <Label htmlFor="excel">
                   Import bulk employees via Excel file
                 </Label>
