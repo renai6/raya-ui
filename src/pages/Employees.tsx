@@ -2,7 +2,13 @@ import Header from "@/components/header/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { ChevronDown, ChevronDownIcon, ChevronUp, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronDownIcon,
+  ChevronUp,
+  Download,
+  Plus,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -219,6 +225,32 @@ const Employees = () => {
     toast.success("Template downloaded successfully!");
   };
 
+  const handleExport = () => {
+    const headers = [
+      "Employee Name",
+      "Employee Number",
+      "Contact",
+      "Total Credit",
+    ];
+    const data = employeesData.map((employee: Employee) => [
+      employee.name,
+      employee.employeeNumber,
+      employee.contactNumber,
+      employee.totalCredit,
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+    XLSX.writeFile(
+      workbook,
+      `employee-report${
+        startDate ? `-${startDate?.toISOString().split("T")[0]}` : ""
+      }${endDate ? `-${endDate?.toISOString().split("T")[0]}` : ""}.xlsx`
+    );
+    toast.success("Employee report exported successfully!");
+  };
+
   if (isLoading) {
     return (
       <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
@@ -328,10 +360,17 @@ const Employees = () => {
                 Shows a table of employees with total credit for this payroll
               </small>
             </div>
-            <Button variant="default" onClick={openAddEmployee}>
-              <Plus className="w-4" />
-              Create Employee
-            </Button>
+
+            <div className="flex gap-2">
+              <Button variant="default" onClick={openAddEmployee}>
+                <Plus className="w-4" />
+                Create Employee
+              </Button>
+              <Button variant="secondary" onClick={handleExport}>
+                <Download className="w-4" />
+                Export
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

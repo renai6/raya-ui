@@ -1,19 +1,12 @@
-import { Badge } from "@/components/ui/badge";
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  useTransactionsByDay,
-  useTransactionsByYesterday,
-  useTransactionsByMonth,
-} from "@/hooks/useTransactions";
+import { useTransactionsBySpecificDay } from "@/hooks/useTransactions";
 import { useProductsLowStock, useProductsSaleChart } from "@/hooks/useProducts";
 import {
   Table,
@@ -30,37 +23,20 @@ import Header from "@/components/header/Header";
 import { useAuthUser } from "@/stores/authStore";
 import { COLORS } from "@/lib/contants";
 import { Spinner } from "@/components/ui/spinner";
-import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import DailyRevenue from "@/components/dashboard/DailyRevenue";
+import MonthlyRevenue from "@/components/dashboard/MonthlyRevenue";
 
 const Dashboard = () => {
-  const [selectedMonth, setSelectedMonth] = useState(1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { data: transactionsToday, isLoading: isLoadingToday } =
-    useTransactionsByDay();
-  const { data: transactionsYesterday, isLoading: isLoadingYesterday } =
-    useTransactionsByYesterday();
+    useTransactionsBySpecificDay(new Date());
+
   const { data: lowStockProducts, isLoading: isLoadingLowStock } =
     useProductsLowStock();
   const { data: productSales, isLoading: isLoadingProductSales } =
     useProductsSaleChart();
-  const { data: transactionsMonth, isLoading: isLoadingMonth } =
-    useTransactionsByMonth(selectedMonth, selectedYear);
   const user = useAuthUser();
 
-  if (
-    isLoadingToday ||
-    isLoadingYesterday ||
-    isLoadingLowStock ||
-    isLoadingProductSales ||
-    isLoadingMonth
-  ) {
+  if (isLoadingToday || isLoadingLowStock || isLoadingProductSales) {
     return (
       <div className="h-[40rem] flex justify-center items-center flex-col gap-4">
         <Spinner className="size-10 text-amber-500" />
@@ -68,31 +44,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  function getPercentChange(today: number, yesterday: number) {
-    if (yesterday === 0) return 0;
-    return ((today - yesterday) / yesterday) * 100;
-  }
-
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString("en-PH", {
-      style: "currency",
-      currency: "PHP",
-    });
-  };
-
-  const totalRevenue =
-    transactionsToday?.reduce((acc: number, tx: any) => acc + tx.total, 0) || 0;
-
-  const totalRevenueYesterday =
-    transactionsYesterday?.reduce(
-      (acc: number, tx: any) => acc + tx.total,
-      0
-    ) || 0;
-
-  const percentChange = getPercentChange(totalRevenue, totalRevenueYesterday);
-
-  const isIncrease = percentChange >= 0;
 
   const chartSalesData = productSales.map(
     (product: Product & { sales: Sale[] }) => ({
@@ -105,97 +56,13 @@ const Dashboard = () => {
     })
   );
 
-  const currentDate = new Date();
-
   return (
     <div>
       <Header title="Dashboard" user={{ email: user?.email }} />
 
       <div className="mb-5 flex flex-col gap-6 xl:flex-row xl:justify-between">
-        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
-          <CardHeader>
-            <CardDescription>Daily Revenue</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatCurrency(totalRevenue)}
-            </CardTitle>
-            <CardAction>
-              <Badge variant="outline">
-                {isIncrease ? (
-                  <IconTrendingUp color="green" />
-                ) : (
-                  <IconTrendingDown color="red" />
-                )}
-                {percentChange > 0
-                  ? `+${percentChange.toFixed(1)}%`
-                  : `${percentChange.toFixed(1)}%`}
-              </Badge>
-            </CardAction>
-          </CardHeader>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="text-muted-foreground">
-              Total revenue from invoices within the day
-            </div>
-          </CardFooter>
-        </Card>
-        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
-          <CardHeader>
-            <CardDescription className="flex items-center justify-between">
-              Monthly Revenue
-              <div className="flex gap-2">
-                <Select
-                  value={selectedMonth.toString()}
-                  onValueChange={(value) => setSelectedMonth(parseInt(value))}
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <SelectItem key={i + 1} value={(i + 1).toString()}>
-                        {new Date(0, i).toLocaleString("default", {
-                          month: "short",
-                        })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={selectedYear.toString()}
-                  onValueChange={(value) => setSelectedYear(parseInt(value))}
-                >
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 10 }, (_, i) => (
-                      <SelectItem
-                        key={currentDate.getFullYear() - i}
-                        value={(currentDate.getFullYear() - i).toString()}
-                      >
-                        {currentDate.getFullYear() - i}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatCurrency(transactionsMonth.totalSales)}
-            </CardTitle>
-          </CardHeader>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="text-muted-foreground">
-              Total revenue for{" "}
-              {new Date(selectedYear, selectedMonth - 1).toLocaleDateString(
-                "en-US",
-                {
-                  month: "long",
-                  year: "numeric",
-                }
-              )}
-            </div>
-          </CardFooter>
-        </Card>
+        <DailyRevenue />
+        <MonthlyRevenue />
         <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
           <CardHeader>
             <CardDescription>Total Customers</CardDescription>
@@ -204,7 +71,9 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="text-muted-foreground">Based on invoices</div>
+            <div className="text-muted-foreground">
+              Customer count for the day
+            </div>
           </CardFooter>
         </Card>
         <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">

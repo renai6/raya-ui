@@ -120,6 +120,18 @@ const PrintCashCheckout = () => {
         </Text>
         <Text>₱{cashSession?.closingCash.toFixed(2)}</Text>
       </RowText>
+      <RowText>
+        <Text bold style={{ fontSize: 11 }}>
+          Difference
+        </Text>
+        <Text>
+          ₱
+          {(
+            cashSession?.closingCash -
+            (totalRevenue - totalCreditAmount + cashSession?.openingCash)
+          ).toFixed(2)}
+        </Text>
+      </RowText>
 
       <Dot />
       <Space size={[10, 10]} />

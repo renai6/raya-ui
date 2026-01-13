@@ -40,3 +40,19 @@ export const useTransactionsByMonth = (month: number, year: number) => {
     },
   });
 };
+
+export const useTransactionsBySpecificDay = (date: Date) => {
+  const dateString = date.toISOString().split("T")[0];
+
+  return useQuery({
+    queryKey: ["transaction-day", dateString],
+    queryFn: async () => {
+      const response = await api.get(
+        `/transactions/day?date=${date.getFullYear()}-${
+          date.getMonth() + 1
+        }-${date.getDate()}`
+      );
+      return response.data;
+    },
+  });
+};
