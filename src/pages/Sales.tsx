@@ -216,7 +216,7 @@ const Sales = () => {
       return;
     if (
       paymentType === "CREDIT" &&
-      (!employee?.id || employee?.totalCredit + total > 2000)
+      (!employee?.id || employee?.totalCredit + total > 1500)
     )
       return;
 
@@ -287,7 +287,7 @@ const Sales = () => {
                       disabled={
                         cartItems.length === 0 ||
                         !employee?.id ||
-                        employee?.totalCredit + total > 2000
+                        employee?.totalCredit + total > 1500
                       }
                     >
                       <CreditCard className="w-4" />
@@ -339,13 +339,13 @@ const Sales = () => {
                     placeholder="Scan employee barcode"
                     className={`mb-0 ${
                       employeeBarcode !== "" &&
-                      (employee?.totalCredit + total > 2000 || !employee?.id)
+                      (employee?.totalCredit + total > 1500 || !employee?.id)
                         ? "border-red-400"
                         : ""
                     }`}
                     autoFocus
                   />
-                  {employee?.totalCredit + total > 2000 && (
+                  {employee?.totalCredit + total > 1500 && (
                     <small className="text-red-400">
                       Employee exceeded credit limit
                     </small>
@@ -381,7 +381,7 @@ const Sales = () => {
                         <div className="flex flex-col">
                           <span>Total credit</span>
                           <small className="dark:text-yellow-500 text-yellow-600">
-                            Total credit must not exceed ₱2000
+                            Total credit must not exceed ₱1500
                           </small>
                         </div>
                         <span>{employee?.totalCredit}</span>
@@ -603,7 +603,7 @@ const Sales = () => {
                         <div className="flex flex-col">
                           <span>Total credit</span>
                           <small className="text-yellow-500">
-                            Total credit must not exceed ₱2000
+                            Total credit must not exceed ₱1500
                           </small>
                         </div>
                         <span>{employee?.totalCredit}</span>

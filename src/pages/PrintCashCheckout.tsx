@@ -26,8 +26,8 @@ const PrintCashCheckout = () => {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) window.print();
-  }, [isLoading]);
+    if (!isLoading && !isLoadingToday) window.print();
+  }, [isLoading, isLoadingToday]);
 
   if (isLoading || isLoadingToday) {
     return <div>Loading...</div>;

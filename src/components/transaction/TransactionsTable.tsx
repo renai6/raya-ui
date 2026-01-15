@@ -92,13 +92,21 @@ const TransactionsTable = ({
   };
 
   const handleExportSales = () => {
-    const headers = ["Date", "Name", "Barcode", "Total", "Quantity Sold"];
+    const headers = [
+      "Date",
+      "Name",
+      "Barcode",
+      "Price",
+      "Quantity Sold",
+      "Total Amount",
+    ];
     const data = sales.map((sale: any) => [
       sale.createdAt,
       sale.product.name,
       sale.product.barcode,
-      sale.total,
+      sale.product.retailPrice,
       sale.quantity,
+      sale.quantity * sale.product.retailPrice,
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
