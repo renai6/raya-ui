@@ -11,17 +11,17 @@ const PrintSale = () => {
   const { data: transaction, isLoading } = useTransaction(id);
   const user = useAuthUser();
 
-  // useEffect(() => {
-  //   const handleAfterPrint = () => {
-  //     window.close();
-  //   };
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      window.close();
+    };
 
-  //   window.addEventListener("afterprint", handleAfterPrint);
-  //   // Clean up the event listener when the component unmounts
-  //   return () => {
-  //     window.removeEventListener("afterprint", handleAfterPrint);
-  //   };
-  // }, []);
+    window.addEventListener("afterprint", handleAfterPrint);
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoading) window.print();
