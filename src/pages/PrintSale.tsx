@@ -1,5 +1,6 @@
 import { useTransaction } from "@/hooks/useTransaction";
 import { Route } from "@/routes/print.$id";
+import { useAuthUser } from "@/stores/authStore";
 import { useEffect } from "react";
 import { Dot, Paper, RowText, Space, Text } from "react-receipt-slip";
 
@@ -8,18 +9,19 @@ const date = new Date();
 const PrintSale = () => {
   const { id } = Route.useParams();
   const { data: transaction, isLoading } = useTransaction(id);
+  const user = useAuthUser();
 
-  useEffect(() => {
-    const handleAfterPrint = () => {
-      window.close();
-    };
+  // useEffect(() => {
+  //   const handleAfterPrint = () => {
+  //     window.close();
+  //   };
 
-    window.addEventListener("afterprint", handleAfterPrint);
-    // Clean up the event listener when the component unmounts
-    return () => {
-      window.removeEventListener("afterprint", handleAfterPrint);
-    };
-  }, []);
+  //   window.addEventListener("afterprint", handleAfterPrint);
+  //   // Clean up the event listener when the component unmounts
+  //   return () => {
+  //     window.removeEventListener("afterprint", handleAfterPrint);
+  //   };
+  // }, []);
 
   useEffect(() => {
     if (!isLoading) window.print();
@@ -44,11 +46,21 @@ const PrintSale = () => {
       <Text align="center" style={{ fontSize: 11 }}>
         Boalan, Zamboanga City{" "}
       </Text>
+
+      <Space size={[10, 10]} />
       <Text align="center" style={{ fontSize: 11 }}>
-        {date.toDateString()} {date.toLocaleTimeString()}
+        Sales Invoice
       </Text>
       <Space size={[10, 10]} />
-      <Dot />
+      <Text align="left" style={{ fontSize: 10 }}>
+        {date.toLocaleTimeString()}, {date.toDateString()}
+      </Text>
+      <Text align="left" style={{ fontSize: 10 }}>
+        Cahier: {user.email}
+      </Text>
+      <Text align="left" style={{ fontSize: 10 }}>
+        Sales Invoice #: {transaction?.number || ""}
+      </Text>
       <Space size={[10, 10]} />
       {transaction?.sales.map((item: any) => (
         <div key={item.id}>
@@ -90,7 +102,6 @@ const PrintSale = () => {
         </Text>
       </RowText>
       <Space size={[5, 5]} />
-      <Dot />
       <Space size={[10, 10]} />
       <Space size={[10, 10]} />
       <Text align="center" style={{ fontSize: 11 }}>
@@ -109,24 +120,20 @@ const PrintSale = () => {
       )}
 
       <Space size={[10, 10]} />
-      <Text style={{ fontSize: 9 }} align="center">
-        OR No: {transaction?.id}{" "}
-      </Text>
-      <Space size={[10, 10]} />
-      <Dot />
+
       <Space size={[10, 10]} />
       <Text align="center" style={{ fontSize: 11 }}>
         This receipt is your proof of purchase. Merchandise received in good
         condition.
       </Text>
       <Space size={[10, 10]} />
-
+      <Space size={[10, 10]} />
       <Space size={[10, 10]} />
       <Text
         align="center"
         style={{ fontSize: 11, marginRight: 10, marginLeft: 10 }}
       >
-        Please come again!
+        Raya POS v{import.meta.env.PACKAGE_VERSION}
       </Text>
     </Paper>
   );

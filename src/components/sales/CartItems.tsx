@@ -35,7 +35,7 @@ const CartItems = (props: Props) => {
         item.saleType === "WHOLESALE" ? "border border-amber-400" : ""
       } ${
         currentScannedItem?.id === item.id
-          ? "dark:bg-yellow-500/10 bg-neutral-400"
+          ? "dark:bg-yellow-500/10 bg-neutral-300"
           : "dark:bg-neutral-800 bg-neutral-200"
       }`}
     >
@@ -43,7 +43,7 @@ const CartItems = (props: Props) => {
       <div className="flex items-start justify-between">
         <div className="flex justify-between w-full items-center">
           <div>
-            <h3 className="font-medium text-lg">{item.name}</h3>
+            <h3 className="font-medium text-md">{item.name}</h3>
 
             <div className="flex items-center space-x-2 mt-1">
               <Badge
@@ -139,7 +139,7 @@ const CartItems = (props: Props) => {
               </div>
             </div>
             <div className="text-right">
-              <p className="font-bold text-lg">
+              <p className="font-bold text-md m-0">
                 ₱{(item.selectedPrice * item.quantity).toFixed(2)}
               </p>
               <small>₱{item.selectedPrice.toFixed(2)} each</small>

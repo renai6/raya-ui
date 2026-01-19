@@ -120,11 +120,12 @@ export const useSaleStore = create<SalesState>((set) => ({
 export const useSalesActions = () => useSaleStore((state) => state.actions);
 export const useSelectedItem = () =>
   useSaleStore((state) => state.selectedItem);
-export const useSalesCartItems = () => useSaleStore((state) => state.cartItems);
+export const useSalesCartItems = () =>
+  useSaleStore((state) => state.cartItems || []);
 export const useSalesCurrentScannedItem = () =>
   useSaleStore((state) => state.currentScannedItem);
 export const useIsEditQuantityDialogOpen = () =>
   useSaleStore((state) => state.isEditQuantityDialogOpen);
 export const useSalesCashReceived = () =>
-  useSaleStore((state) => state.cashReceived);
+  useSaleStore((state) => state.cashReceived || 0);
 export const useQuantity = () => useSaleStore((state) => state.quantity);

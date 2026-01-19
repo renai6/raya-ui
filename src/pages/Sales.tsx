@@ -68,7 +68,7 @@ const Sales = () => {
   const user = useAuthUser();
 
   const { data: cashSession, isLoading: isCashSessionLoading } = useCashSession(
-    user?.sub || ""
+    user?.sub || "",
   );
   const { createCashSession, updateCashSession } = useCashSessionMutations();
 
@@ -119,7 +119,7 @@ const Sales = () => {
 
       if (!cashSession?.id) return;
 
-      if (event.code === "KeyQ") {
+      if (event.altKey && event.key.toLowerCase() === "q") {
         if (isEditQuantityDialogOpen) return;
 
         setEditQuantityDialogOpen(true);
@@ -131,7 +131,7 @@ const Sales = () => {
         setIsWaitingBarcode(true);
       }
 
-      if (event.code === "KeyC") {
+      if (event.altKey && event.key.toLowerCase() === "w") {
         if (isEditQuantityDialogOpen || paymentType !== "CASH") return;
 
         if (cashInputRef.current) {
@@ -157,7 +157,13 @@ const Sales = () => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [cartItems, cashReceived, isEditQuantityDialogOpen, paymentType]);
+  }, [
+    cartItems.length,
+    cashReceived,
+    isEditQuantityDialogOpen,
+    paymentType,
+    cashSession?.id,
+  ]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -225,7 +231,7 @@ const Sales = () => {
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.selectedPrice * item.quantity,
-    0
+    0,
   );
 
   const total = subtotal;
@@ -265,7 +271,7 @@ const Sales = () => {
 
         {/* Right Column - Summary Card */}
         <div className="space-y-8">
-          <Card className="shadow-lg sticky top-4 gap-1 shadow-[0_8px_25px_rgba(0,0,0,0.6)] border-none">
+          <Card className="shadow-lg sticky top-4 gap-1 shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-none">
             <CardHeader>
               <CardTitle className="flex justify-between items-center space-x-2">
                 <div className="flex gap-3 items-center">
@@ -366,7 +372,7 @@ const Sales = () => {
                   )}
 
                   {employee?.id && (
-                    <div className="bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
+                    <div className="bg-neutral-200 dark:bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
                       <div className="flex justify-between text-sm">
                         <span>Employee Number</span>
                         <span>{employeeBarcode}</span>
@@ -437,10 +443,10 @@ const Sales = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <Card className="shadow-[0_4px_15px_rgba(0,0,0,0.6)] border-none mt-2">
+                <Card className="shadow-[0_8px_15px_rgba(0,0,0,0.3)] border-none mt-2">
                   <CardContent className="flex justify-between items-center">
                     <h2 className="font-semibold flex items-center gap-2">
-                      <SquareMenu className="w-4 text-amber-400" />
+                      <SquareMenu className="w-4 text-amber-500" />
                       <span>Today's Summary</span>
                     </h2>
                     <Button onClick={() => setIsCashCheckoutDialogOpen(true)}>
@@ -483,7 +489,7 @@ const Sales = () => {
                             {formatCurrency(
                               totalRevenue +
                                 cashSession.openingCash -
-                                totalCreditAmount || 0
+                                totalCreditAmount || 0,
                             )}
                           </CardTitle>
                         </div>
@@ -565,7 +571,7 @@ const Sales = () => {
                         <span>
                           {cartItems.reduce(
                             (sum, item) => sum + item.quantity,
-                            0
+                            0,
                           )}
                         </span>
                       </div>
@@ -740,7 +746,7 @@ const Sales = () => {
                         {formatCurrency(
                           totalRevenue +
                             cashSession.openingCash -
-                            totalCreditAmount || 0
+                            totalCreditAmount || 0,
                         )}
                       </CardTitle>
                     </div>

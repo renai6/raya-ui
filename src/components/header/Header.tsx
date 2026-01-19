@@ -24,7 +24,7 @@ const Header = ({ user, title }: Props) => {
             )}
           </div>
           <div>
-            <h1 className="font-bold">{title}</h1>
+            <h2 className="font-semibold text-md">{title}</h2>
           </div>
         </div>
         <div className="text-right">

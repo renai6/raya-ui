@@ -58,7 +58,7 @@ function RootComponent() {
                   alt="Raya Logo"
                   className="h-12 w-12 object-contain mb-1"
                 />
-                <h2>Steel Colors and Metal Products</h2>
+                <h2 className="text-bold">Steel Colors and Metal Products</h2>
               </div>
               <div className="flex items-center gap-5">
                 {currentPathname === "/" ? null : !isDesktop ? (
