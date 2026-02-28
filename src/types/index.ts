@@ -17,6 +17,7 @@ export interface Employee {
   name: string;
   contactNumber: string;
   email: string;
+  creditLimit: number;
   totalCredit?: number;
   createdAt?: string;
 }

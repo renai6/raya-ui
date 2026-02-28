@@ -33,7 +33,10 @@ import {
 } from "@/components/ui/collapsible";
 import { useCreateEmployee } from "@/hooks/useCreateEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
-import { useUpdateEmployee } from "@/hooks/useUpdateEmployee";
+import {
+  useUpdateEmployee,
+  useUpdateEmployeeCreditStatus,
+} from "@/hooks/useUpdateEmployee";
 import { useAuthUser } from "@/stores/authStore";
 import type { Employee } from "@/types";
 import * as XLSX from "xlsx";
@@ -50,6 +53,14 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 
+const employeeDefaultValues = {
+  employeeNumber: "",
+  name: "",
+  contactNumber: "",
+  email: "",
+  creditLimit: 1500,
+};
+
 const Employees = () => {
   const [startDate, setStartDate] = useState<undefined | Date>();
   const [endDate, setEndDate] = useState<undefined | Date>();
@@ -63,33 +74,25 @@ const Employees = () => {
   const { mutate: createEmployee } = useCreateEmployee();
   const { mutate: createBulkEmployees } = useCreateBulkEmployees();
   const { mutate: updateEmployee } = useUpdateEmployee();
+  const { mutate: updateEmployeeCreditStatus } =
+    useUpdateEmployeeCreditStatus();
   const { mutate: deleteEmployee } = useDeleteEmployee();
 
   const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false);
   const [isCreatingBulkEmployees, setIsCreatingBulkEmployees] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null
+    null,
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [fileUploaded, setFileUploaded] = useState<any[]>([]);
-  const [form, setForm] = useState<Employee>({
-    employeeNumber: "",
-    name: "",
-    contactNumber: "",
-    email: "",
-  });
+  const [form, setForm] = useState<Employee>(employeeDefaultValues);
 
   const [deletingEmployeeNumber, setDeletingEmployeeNumber] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   const openAddEmployee = () => {
     setSelectedEmployee(null);
-    setForm({
-      employeeNumber: "",
-      name: "",
-      contactNumber: "",
-      email: "",
-    });
+    setForm(employeeDefaultValues);
     setIsEmployeeDialogOpen(true);
   };
 
@@ -100,6 +103,7 @@ const Employees = () => {
       name: employee.name,
       contactNumber: employee.contactNumber,
       email: employee.email,
+      creditLimit: employee.creditLimit,
     });
     setIsEmployeeDialogOpen(true);
     setDeletingEmployeeNumber("");
@@ -121,23 +125,21 @@ const Employees = () => {
         toast.error("Employee Number cannot be updated.");
         return;
       }
-
+      console.log({ ...form, id: selectedEmployee.id });
       updateEmployee({ ...form, id: selectedEmployee.id });
     } else {
       createEmployee(form);
     }
     setIsEmployeeDialogOpen(false);
-    setForm({
-      employeeNumber: "",
-      name: "",
-      contactNumber: "",
-      email: "",
-    });
+    setForm(employeeDefaultValues);
   };
 
-  const formHasAnyValue = Object.values(form).some(
-    (value) => value.trim() !== ""
-  );
+  const formHasAnyValue = Object.values(form).some((value) => {
+    if (typeof value === "string") {
+      return value.trim() !== "";
+    }
+    return false;
+  });
 
   // Filter employees based on search term
   const filteredEmployees = Array.isArray(employeesData)
@@ -181,6 +183,8 @@ const Employees = () => {
       name: row[1]?.toString() || "",
       contactNumber: row[2]?.toString() || "",
       email: row[3]?.toString() || "",
+      creditLimit: row[4] ? Number(row[4]) : 1500,
+      isPaid: row[5] ? row[5].toString().toLowerCase() === "true" : false,
     }));
 
     await createBulkEmployees(employees);
@@ -194,12 +198,7 @@ const Employees = () => {
 
   const onEmployeeDialogClose = () => {
     setFileUploaded([]);
-    setForm({
-      employeeNumber: "",
-      name: "",
-      contactNumber: "",
-      email: "",
-    });
+    setForm(employeeDefaultValues);
     setIsEmployeeDialogOpen(false);
   };
 
@@ -215,7 +214,14 @@ const Employees = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const headers = ["Employee Number", "Name", "Contact Number", "Email"];
+    const headers = [
+      "Employee Number",
+      "Name",
+      "Contact Number",
+      "Email",
+      "Credit Limit",
+      "Credit Paid Status (true/false)",
+    ];
     const worksheet = XLSX.utils.aoa_to_sheet([headers]);
 
     const workbook = XLSX.utils.book_new();
@@ -230,12 +236,14 @@ const Employees = () => {
       "Employee Name",
       "Employee Number",
       "Contact",
+      "Credit Limit",
       "Total Credit",
     ];
     const data = employeesData.map((employee: Employee) => [
       employee.name,
       employee.employeeNumber,
       employee.contactNumber,
+      employee.creditLimit,
       employee.totalCredit,
     ]);
 
@@ -246,9 +254,16 @@ const Employees = () => {
       workbook,
       `employee-report${
         startDate ? `-${startDate?.toISOString().split("T")[0]}` : ""
-      }${endDate ? `-${endDate?.toISOString().split("T")[0]}` : ""}.xlsx`
+      }${endDate ? `-${endDate?.toISOString().split("T")[0]}` : ""}.xlsx`,
     );
     toast.success("Employee report exported successfully!");
+  };
+
+  const handleCreditUpdate = () => {
+    if (!selectedEmployee?.id) return;
+    updateEmployeeCreditStatus(selectedEmployee);
+
+    setIsEmployeeDialogOpen(false);
   };
 
   if (isLoading) {
@@ -386,6 +401,7 @@ const Employees = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Employee Number</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Credit Limit</TableHead>
                   <TableHead>Total Credit</TableHead>
                 </TableRow>
               </TableHeader>
@@ -401,6 +417,7 @@ const Employees = () => {
                     </TableCell>
                     <TableCell>{employee.employeeNumber}</TableCell>
                     <TableCell>{employee.contactNumber}</TableCell>
+                    <TableCell>{employee.creditLimit}</TableCell>
                     <TableCell>{employee.totalCredit}</TableCell>
                   </TableRow>
                 ))}
@@ -421,7 +438,7 @@ const Employees = () => {
           })
         }
       >
-        <DialogContent>
+        <DialogContent className="px-2">
           <DialogHeader>
             <DialogTitle>
               {selectedEmployee ? "Edit Employee" : "Add Employee"}
@@ -432,166 +449,201 @@ const Employees = () => {
                 : "Fill in the details to add a new employee."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleFormSubmit} className="space-y-4">
-            <div>
-              <Label className="mb-2" htmlFor="employeeNumber">
-                Employee Number
-              </Label>
-              <Input
-                id="employeeNumber"
-                name="employeeNumber"
-                value={form.employeeNumber}
-                onChange={handleFormChange}
-                required
-                disabled={
-                  fileUploaded.length > 0 || isDeleting || !!selectedEmployee
-                }
-              />
-            </div>
-            <div>
-              <Label className="mb-2" htmlFor="name">
-                Name
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                value={form.name}
-                onChange={handleFormChange}
-                required
-                disabled={fileUploaded.length > 0 || isDeleting}
-              />
-            </div>
-            <div>
-              <Label className="mb-2" htmlFor="contactNumber">
-                Contact Number
-              </Label>
-              <Input
-                id="contactNumber"
-                name="contactNumber"
-                value={form.contactNumber}
-                onChange={handleFormChange}
-                disabled={fileUploaded.length > 0 || isDeleting}
-              />
-            </div>
-            <div>
-              <Label className="mb-2" htmlFor="email">
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleFormChange}
-                disabled={fileUploaded.length > 0 || isDeleting}
-              />
-            </div>
-
-            {isDeleting ? null : (
-              <div className="flex justify-end space-x-2">
-                <Button
-                  className="w-full"
-                  type="submit"
-                  disabled={fileUploaded.length > 0}
-                >
-                  {selectedEmployee ? "Update" : "Add"}
-                </Button>
-              </div>
-            )}
-          </form>
-
-          {selectedEmployee || formHasAnyValue ? null : (
-            <>
+          <div className="max-h-[70vh] overflow-auto sm:max-w-lg px-2 custom-scrollbar">
+            <form onSubmit={handleFormSubmit} className="space-y-4">
               <div>
-                <hr />
-              </div>
-              <div className="grid items-center gap-3 py-4">
-                <DialogTitle>Create in bulk</DialogTitle>
-                <DialogDescription className="flex gap-2 flex-col">
-                  <span>
-                    Import employees in bulk using a CSV file. To avoid errors,
-                    please use the provided template and follow the required
-                    format.
-                  </span>
-                  <span
-                    className="text-amber-500 cursor-pointer font-semibold underline"
-                    onClick={handleDownloadTemplate}
-                  >
-                    Download Template
-                  </span>
-                </DialogDescription>
-                <Label htmlFor="excel">
-                  Import bulk employees via Excel file
+                <Label className="mb-2" htmlFor="employeeNumber">
+                  Employee Number
                 </Label>
                 <Input
-                  onChange={handleUpload}
-                  id="excel"
-                  type="file"
-                  accept=".xlsx,.xls"
+                  id="employeeNumber"
+                  name="employeeNumber"
+                  value={form.employeeNumber}
+                  onChange={handleFormChange}
+                  required
+                  disabled={
+                    fileUploaded.length > 0 || isDeleting || !!selectedEmployee
+                  }
                 />
-                <Button
-                  disabled={isCreatingBulkEmployees}
-                  onClick={handleImport}
-                >
-                  {isCreatingBulkEmployees ? (
-                    <>
-                      <Spinner />
-                      Processing
-                    </>
-                  ) : (
-                    "Import"
-                  )}
-                </Button>
               </div>
-            </>
-          )}
+              <div>
+                <Label className="mb-2" htmlFor="name">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleFormChange}
+                  required
+                  disabled={fileUploaded.length > 0 || isDeleting}
+                />
+              </div>
+              <div>
+                <Label className="mb-2" htmlFor="contactNumber">
+                  Contact Number
+                </Label>
+                <Input
+                  id="contactNumber"
+                  name="contactNumber"
+                  value={form.contactNumber}
+                  onChange={handleFormChange}
+                  disabled={fileUploaded.length > 0 || isDeleting}
+                />
+              </div>
+              <div>
+                <Label className="mb-2" htmlFor="email">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleFormChange}
+                  disabled={fileUploaded.length > 0 || isDeleting}
+                />
+              </div>
+              <div>
+                <Label className="mb-2" htmlFor="creditLimit">
+                  Credit Limit
+                </Label>
+                <Input
+                  id="creditLimit"
+                  name="creditLimit"
+                  type="number"
+                  value={form.creditLimit}
+                  onChange={handleFormChange}
+                  disabled={fileUploaded.length > 0 || isDeleting}
+                />
+              </div>
 
-          {selectedEmployee?.id && (
-            <Collapsible open={isDeleting} onOpenChange={setIsDeleting}>
-              <CollapsibleTrigger className="w-full" asChild>
-                <Button variant="ghost" className="w-full text-red-300">
-                  {isDeleting ? "Hide" : "Remove Employee"}{" "}
-                  {isDeleting ? (
-                    <ChevronUp className="ml-2 h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="p-3 border border-red-600 rounded-sm mt-4">
-                  <h3 className="text-red-400 text-bold">Danger Zone</h3>
-                  <small className="text-gray-300">
-                    Please proceed with caution. Deleting this employee may have
-                    serious consequences.
-                  </small>
-
-                  <div>
-                    <Label className="mb-2 mt-4">
-                      Please enter the employee number of the employee to be
-                      deleted
-                    </Label>
-                    <Input
-                      onChange={(e) =>
-                        setDeletingEmployeeNumber(e.target.value)
-                      }
-                    />
-                  </div>
-
+              {isDeleting ? null : (
+                <div className="flex justify-end space-x-2">
                   <Button
-                    className="mt-3 w-full"
-                    variant="destructive"
-                    onClick={() => onDeleteEmployee(selectedEmployee.id)}
-                    disabled={
-                      deletingEmployeeNumber !== selectedEmployee.employeeNumber
-                    }
+                    className="w-full"
+                    type="submit"
+                    disabled={fileUploaded.length > 0}
                   >
-                    Delete Employee
+                    {selectedEmployee ? "Update" : "Add"}
                   </Button>
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
+              )}
+            </form>
+            {selectedEmployee && (
+              <div className="p-3 border border-amber-500 rounded-sm my-4">
+                <h3 className="text-amber-400 font-bold">Employee Credit</h3>
+                <small className="text-gray-300">
+                  Please proceed with caution. {form.name} has a total credit of{" "}
+                  {selectedEmployee?.totalCredit || 0}.
+                </small>
+
+                <div className="flex justify-end">
+                  <Button
+                    className="mt-3"
+                    variant="outline"
+                    disabled={selectedEmployee?.totalCredit === 0}
+                    onClick={handleCreditUpdate}
+                  >
+                    Set Credit Paid
+                  </Button>
+                </div>
+              </div>
+            )}
+            {selectedEmployee || formHasAnyValue ? null : (
+              <>
+                <div>
+                  <hr />
+                </div>
+                <div className="grid items-center gap-3 py-4">
+                  <DialogTitle>Create or Update in bulk</DialogTitle>
+                  <DialogDescription className="flex gap-2 flex-col">
+                    <span>
+                      Import employees in bulk using a CSV file. To avoid
+                      errors, please use the provided template and follow the
+                      required format.
+                    </span>
+                    <span
+                      className="text-amber-500 cursor-pointer font-semibold underline"
+                      onClick={handleDownloadTemplate}
+                    >
+                      Download Template
+                    </span>
+                  </DialogDescription>
+                  <Label htmlFor="excel">
+                    Import bulk employees via Excel file
+                  </Label>
+                  <Input
+                    onChange={handleUpload}
+                    id="excel"
+                    type="file"
+                    accept=".xlsx,.xls"
+                  />
+                  <Button
+                    disabled={isCreatingBulkEmployees}
+                    onClick={handleImport}
+                  >
+                    {isCreatingBulkEmployees ? (
+                      <>
+                        <Spinner />
+                        Processing
+                      </>
+                    ) : (
+                      "Import"
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {selectedEmployee?.id && (
+              <Collapsible open={isDeleting} onOpenChange={setIsDeleting}>
+                <CollapsibleTrigger className="w-full" asChild>
+                  <Button variant="ghost" className="w-full text-red-300">
+                    {isDeleting ? "Hide" : "Remove Employee"}{" "}
+                    {isDeleting ? (
+                      <ChevronUp className="ml-2 h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-3 border border-red-600 rounded-sm mt-4">
+                    <h3 className="text-red-400 text-bold">Danger Zone</h3>
+                    <small className="text-gray-300">
+                      Please proceed with caution. Deleting this employee may
+                      have serious consequences.
+                    </small>
+
+                    <div>
+                      <Label className="mb-2 mt-4">
+                        Please enter the employee number of the employee to be
+                        deleted
+                      </Label>
+                      <Input
+                        onChange={(e) =>
+                          setDeletingEmployeeNumber(e.target.value)
+                        }
+                      />
+                    </div>
+
+                    <Button
+                      className="mt-3 w-full"
+                      variant="destructive"
+                      onClick={() => onDeleteEmployee(selectedEmployee.id)}
+                      disabled={
+                        deletingEmployeeNumber !==
+                        selectedEmployee.employeeNumber
+                      }
+                    >
+                      Delete Employee
+                    </Button>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
