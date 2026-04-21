@@ -18,16 +18,18 @@ export const useCashSessionMutations = () => {
   });
 
   const updateCashSession = useMutation({
-    mutationFn: async (data: { id: string; closingCash: number }) => {
-      const response = await api.put(`/users/${data.id}/cash-sessions`, {
-        closingCash: data.closingCash,
-      });
+    mutationFn: async (data: {
+      id: string;
+      payload: { closingCash?: number; borrowedCash?: number };
+    }) => {
+      const response = await api.put(
+        `/users/${data.id}/cash-sessions`,
+        data.payload,
+      );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cashSession"] });
-
-      window.open(`/print-cash-checkout/${data.id}`, "_blank");
     },
   });
 

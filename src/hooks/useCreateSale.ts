@@ -21,6 +21,7 @@ export const useCreateSale = () => {
     onSuccess: (data) => {
       // Optionally refetch sales or other queries
       queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["transaction-day"] });
 
       window.open(`/print/${data.transaction}`, "_blank");
     },

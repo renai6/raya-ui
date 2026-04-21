@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, MoveRight } from "lucide-react";
+import { Download, MoveRight, Eye, Printer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 import * as XLSX from "xlsx";
@@ -19,11 +19,20 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ChevronDownIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import type { Product, Sale } from "@/types";
 import { useState } from "react";
 import { useSalesDated } from "@/hooks/useSalesDated";
+import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 const TransactionsTable = ({
   inventoryTransactions,
@@ -35,13 +44,19 @@ const TransactionsTable = ({
     products: Product[];
   };
 }) => {
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState<undefined | Date>();
   const [endDate, setEndDate] = useState<undefined | Date>();
 
   const [isStartCalendarOpen, setIsStartCalendarOpen] = useState(false);
   const [isEndCalendarOpen, setIsEndCalendarOpen] = useState(false);
 
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+
   const { data: sales } = useSalesDated(startDate, endDate);
+  const { data: transactions, isLoading: isTransactionsLoading } =
+    useTransactions();
 
   const getTransactionType = (transaction: any) => {
     const transactioTypes = [];
@@ -91,6 +106,17 @@ const TransactionsTable = ({
     );
   };
 
+  const handleTransactionClick = (transaction: any) => {
+    setSelectedTransaction(transaction);
+    setIsTransactionDialogOpen(true);
+  };
+
+  const handlePrintReceipt = () => {
+    if (selectedTransaction) {
+      window.open(`/print/${selectedTransaction.id}`, "_blank");
+    }
+  };
+
   const handleExportSales = () => {
     const headers = [
       "Date",
@@ -116,7 +142,7 @@ const TransactionsTable = ({
       workbook,
       `sales-report-${startDate?.toISOString().split("T")[0]}-${
         endDate?.toISOString().split("T")[0]
-      }.xlsx`
+      }.xlsx`,
     );
     toast.success("Sales report exported successfully!");
   };
@@ -132,6 +158,7 @@ const TransactionsTable = ({
         <TabsList>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="sales">Sales</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
         </TabsList>
         <div className="flex justify-between items-end">
           <div className="flex flex-col gap-3">
@@ -309,7 +336,197 @@ const TransactionsTable = ({
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="transactions">
+          <Card className="mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)] border-none">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <h1 className="mb-2">Sales Transactions</h1>
+                  <small className="text-amber-500">
+                    A list of your sales transactions
+                  </small>
+                </div>
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent>
+              <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
+                <Table>
+                  <TableHeader className="dark:bg-neutral-800">
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Payment Type</TableHead>
+                      <TableHead>Cash Received</TableHead>
+                      <TableHead>Change</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isTransactionsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">
+                          Loading transactions...
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      transactions?.map((transaction: any) => (
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted"
+                          key={transaction.id}
+                        >
+                          <TableCell className="font-medium">
+                            {transaction.number || transaction.id}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(
+                              transaction.createdAt,
+                            ).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            ₱{transaction.total?.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            {transaction.cashReceived === 0 ? "CREDIT" : "CASH"}
+                          </TableCell>
+                          <TableCell>
+                            ₱{transaction.cashReceived?.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            ₱
+                            {transaction.cashReceived > 0
+                              ? (
+                                  transaction.cashReceived - transaction.total
+                                ).toFixed(2)
+                              : "0.00"}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleTransactionClick(transaction)
+                              }
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={isTransactionDialogOpen}
+        onOpenChange={setIsTransactionDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Invoice Number</label>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTransaction.number || selectedTransaction.id}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Date</label>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(selectedTransaction.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Payment Type</label>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTransaction.cashReceived === 0 ? "CREDIT" : "CASH"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Total Amount</label>
+                  <p className="text-sm text-muted-foreground">
+                    ₱{selectedTransaction.total?.toFixed(2)}
+                  </p>
+                </div>
+                {selectedTransaction.cashReceived > 0 && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium">
+                        Cash Received
+                      </label>
+                      <p className="text-sm text-muted-foreground">
+                        ₱{selectedTransaction.cashReceived?.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Change</label>
+                      <p className="text-sm text-muted-foreground">
+                        ₱
+                        {(
+                          selectedTransaction.cashReceived -
+                          selectedTransaction.total
+                        ).toFixed(2)}
+                      </p>
+                    </div>
+                  </>
+                )}
+                {selectedTransaction.employee && (
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium">Employee</label>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedTransaction.employee.name}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Items</label>
+                <div className="space-y-2">
+                  {selectedTransaction.sales?.map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center p-2 border rounded"
+                    >
+                      <div>
+                        <p className="font-medium">{item.product.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.quantity} pcs @ ₱{item.total.toFixed(2)}
+                        </p>
+                      </div>
+                      <p className="font-medium">
+                        ₱{(item.total * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsTransactionDialogOpen(false)}
+            >
+              Close
+            </Button>
+            <Button onClick={handlePrintReceipt}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

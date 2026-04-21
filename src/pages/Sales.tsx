@@ -1,4 +1,6 @@
 import Cart from "@/components/sales/Cart";
+import SummaryCard from "@/components/sales/SummaryCard";
+import TodaySummary from "@/components/sales/TodaySummary";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,15 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useProducts } from "@/hooks/useProducts";
-import {
-  Check,
-  CreditCard,
-  X,
-  HandCoins,
-  ChevronRight,
-  SquareMenu,
-  LogOut,
-} from "lucide-react";
+import { Check, X, ChevronRight, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCreateSale } from "@/hooks/useCreateSale";
 import { useAuthActions, useAuthUser } from "@/stores/authStore";
@@ -35,7 +29,6 @@ import {
   useSalesCartItems,
   useSalesCashReceived,
 } from "@/stores/sales";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ItemQuantityDialog from "@/components/sales/ItemQuantityDialog";
@@ -48,11 +41,6 @@ import {
   totalDailyRevenue,
 } from "@/lib/utils";
 import { useTransactionsByDay } from "@/hooks/useTransactions";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useCashSession } from "@/hooks/useCashSession";
 import { useCashSessionMutations } from "@/hooks/useCashSessionMutations";
 import { useNavigate } from "@tanstack/react-router";
@@ -84,6 +72,8 @@ const Sales = () => {
   const [employeeBarcodeInput, setEmployeeBarcodeInput] = useState("");
   const [isCashCheckoutDialogOpen, setIsCashCheckoutDialogOpen] =
     useState(false);
+  const [isBorrowCashDialogOpen, setIsBorrowCashDialogOpen] = useState(false);
+  const [borrowAmount, setBorrowAmount] = useState<number>(0);
 
   const [cashForm, setCashForm] = useState({
     openingCash: "",
@@ -203,9 +193,10 @@ const Sales = () => {
 
       updateCashSession.mutate({
         id: cashSession?.id,
-        closingCash: closingCashAmount,
+        payload: { closingCash: closingCashAmount },
       });
 
+      window.open(`/print-cash-checkout/${cashSession?.id}`, "_blank");
       setIsCashCheckoutDialogOpen(false);
     }
 
@@ -249,6 +240,28 @@ const Sales = () => {
 
   const totalCreditAmount = totalDailyCreditRevenue(transactionsToday || []);
 
+  const expectedCash =
+    totalRevenue +
+    (cashSession?.openingCash || 0) -
+    totalCreditAmount -
+    (cashSession?.borrowedCash || 0);
+
+  const handleBorrowCash = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cashSession?.id) return;
+    if (borrowAmount <= 0 || borrowAmount > expectedCash) return;
+
+    updateCashSession.mutate({
+      id: cashSession.id,
+      payload: {
+        borrowedCash: (cashSession.borrowedCash || 0) + borrowAmount,
+      },
+    });
+
+    setBorrowAmount(0);
+    setIsBorrowCashDialogOpen(false);
+  };
+
   return (
     <div className="mx-auto">
       {/* Header */}
@@ -271,236 +284,29 @@ const Sales = () => {
 
         {/* Right Column - Summary Card */}
         <div className="space-y-8">
-          <Card className="shadow-lg sticky top-4 gap-1 shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-none">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center space-x-2">
-                <div className="flex gap-3 items-center">
-                  <HandCoins className="w-5 h-5 text-amber-400" />
-                  <span>Payment Summary</span>
-                </div>
-                <div className="space-y-3">
-                  {paymentType === "CASH" ? (
-                    <Button
-                      onClick={onOpenPaymentDialog}
-                      disabled={cartItems.length === 0 || cashReceived < total}
-                    >
-                      <CreditCard className="w-4" />
-                      Process Payment
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={onOpenPaymentDialog}
-                      disabled={
-                        cartItems.length === 0 ||
-                        !employee?.id ||
-                        employee?.totalCredit + total > employee?.creditLimit
-                      }
-                    >
-                      <CreditCard className="w-4" />
-                      Process Payment
-                    </Button>
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3 mt-2">
-                <Label className="text-sm font-medium">Payment Type</Label>
-                <RadioGroup
-                  value={paymentType}
-                  onValueChange={(value: "CASH" | "CREDIT") => {
-                    setPaymentType(value);
-                    setCashReceived(0);
-                    setEmployeeBarcode("");
-                    setEmployeeBarcodeInput("");
-                  }}
-                  className="flex space-x-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="CASH" id="cash" />
-                    <Label htmlFor="cash" className="text-sm font-medium">
-                      Cash
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="CREDIT" id="credit" />
-                    <Label htmlFor="credit" className="text-sm font-medium">
-                      Credit
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              {paymentType === "CREDIT" ? (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Employee Number</Label>
-                  <Input
-                    value={employeeBarcodeInput}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const value = e.target.value;
-                      if (isNaN(Number(value))) {
-                        return;
-                      }
-                      setEmployeeBarcodeInput(value);
-                    }}
-                    placeholder="Scan employee barcode"
-                    className={`mb-0 ${
-                      employeeBarcode !== "" &&
-                      (employee?.totalCredit + total > employee?.creditLimit ||
-                        !employee?.id)
-                        ? "border-red-400"
-                        : ""
-                    }`}
-                    autoFocus
-                  />
-                  {employee?.totalCredit + total > employee?.creditLimit && (
-                    <small className="text-red-400">
-                      Employee exceeded credit limit
-                    </small>
-                  )}
-                  {employeeBarcode !== "" &&
-                    !employee?.id &&
-                    !isEmployeeLoading && (
-                      <small className="text-red-400">
-                        Employee number not found
-                      </small>
-                    )}
-
-                  {isEmployeeLoading && (
-                    <div className="bg-zinc-700/30 rounded-lg p-4 flex gap-1 justify-center flex-col items-center mt-3">
-                      <Spinner className="size-6 text-amber-500" />
-                      <small>Fetching employee data</small>
-                    </div>
-                  )}
-
-                  {employee?.id && (
-                    <div className="bg-neutral-200 dark:bg-zinc-700/30 rounded-lg p-4 space-y-3 mt-3">
-                      <div className="flex justify-between text-sm">
-                        <span>Employee Number</span>
-                        <span>{employeeBarcode}</span>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <span>Employee Name</span>
-                        <span>{employee?.name}</span>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <div className="flex flex-col">
-                          <span>Total credit</span>
-                          <small className="dark:text-yellow-500 text-yellow-600">
-                            Total credit must not exceed ₱
-                            {employee?.creditLimit}
-                          </small>
-                        </div>
-                        <span>{employee?.totalCredit}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Cash Received</Label>
-                  <Input
-                    ref={cashInputRef}
-                    className={`mb-0 ${
-                      cashReceived < total && cashReceived !== 0
-                        ? "border-red-400"
-                        : ""
-                    }`}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setCashReceived(Number(e.target.value))
-                    }
-                    value={cashReceived || ""}
-                  />
-                  {cashReceived < total && cashReceived !== 0 && (
-                    <small className="text-red-400">Insufficient Cash</small>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span className="text-amber-400">₱{total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {cartItems.length > 0 && (
-                <div className="pt-4 border-t">
-                  <div className="text-xs space-y-1">
-                    <p>
-                      Items:{" "}
-                      {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SummaryCard
+            paymentType={paymentType}
+            setPaymentType={setPaymentType}
+            cartItems={cartItems}
+            cashReceived={cashReceived}
+            setCashReceived={setCashReceived}
+            total={total}
+            onOpenPaymentDialog={onOpenPaymentDialog}
+            employeeBarcodeInput={employeeBarcodeInput}
+            setEmployeeBarcodeInput={setEmployeeBarcodeInput}
+            employeeBarcode={employeeBarcode}
+            employee={employee}
+            isEmployeeLoading={isEmployeeLoading}
+          />
           {cashSession?.id && (
-            <Collapsible>
-              <CollapsibleTrigger className="w-full" asChild>
-                <Button variant="ghost" className="w-full text-amber-500">
-                  Today's Summary
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <Card className="shadow-[0_8px_15px_rgba(0,0,0,0.3)] border-none mt-2">
-                  <CardContent className="flex justify-between items-center">
-                    <h2 className="font-semibold flex items-center gap-2">
-                      <SquareMenu className="w-4 text-amber-500" />
-                      <span>Today's Summary</span>
-                    </h2>
-                    <Button onClick={() => setIsCashCheckoutDialogOpen(true)}>
-                      <HandCoins className="w-4" />
-                      Cash Checkout
-                    </Button>
-                  </CardContent>
-                  <CardHeader className="space-x-4">
-                    <div className="flex w-full">
-                      <div className="w-full space-y-3">
-                        <div>
-                          <CardDescription>Opening Cash</CardDescription>
-                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
-                            {formatCurrency(cashSession.openingCash || 0)}
-                          </CardTitle>
-                        </div>
-                        <div>
-                          <CardDescription>Cash Revenue</CardDescription>
-                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
-                            {formatCurrency(totalRevenue - totalCreditAmount)}
-                          </CardTitle>
-                        </div>
-                        <div>
-                          <CardDescription>Credit Revenue</CardDescription>
-                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
-                            {formatCurrency(totalCreditAmount)}
-                          </CardTitle>
-                        </div>
-                        <div>
-                          <CardDescription>Total Revenue</CardDescription>
-                          <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
-                            {formatCurrency(totalRevenue)}
-                          </CardTitle>
-                        </div>
-                      </div>
-                      <div className="flex justify-center items-center w-full">
-                        <div className="text-center">
-                          <h2 className="text-lg font-medium">Expected Cash</h2>
-                          <CardTitle className="text-md font-semibold tabular-nums @[250px]/card:text-3xl text-amber-500">
-                            {formatCurrency(
-                              totalRevenue +
-                                cashSession.openingCash -
-                                totalCreditAmount || 0,
-                            )}
-                          </CardTitle>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              </CollapsibleContent>
-            </Collapsible>
+            <TodaySummary
+              cashSession={cashSession}
+              totalRevenue={totalRevenue}
+              totalCreditAmount={totalCreditAmount}
+              expectedCash={expectedCash}
+              setIsBorrowCashDialogOpen={setIsBorrowCashDialogOpen}
+              setIsCashCheckoutDialogOpen={setIsCashCheckoutDialogOpen}
+            />
           )}
         </div>
       </div>
@@ -701,6 +507,64 @@ const Sales = () => {
       </div>
       <div>
         <Dialog
+          open={isBorrowCashDialogOpen}
+          onOpenChange={setIsBorrowCashDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Borrow Cash</DialogTitle>
+              <DialogDescription>
+                Enter the amount you want to borrow from the cashier. It cannot
+                exceed the current expected cash balance.
+              </DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={handleBorrowCash}>
+              <div>
+                <Label className="mb-2">Borrow Amount</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={borrowAmount || ""}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setBorrowAmount(Number(e.target.value))
+                  }
+                  placeholder={`Max ₱${expectedCash.toFixed(2)}`}
+                  className={
+                    borrowAmount > expectedCash ? "border-red-400" : ""
+                  }
+                  required
+                />
+                <small className="text-sm text-neutral-500">
+                  Maximum allowed: ₱{expectedCash.toFixed(2)}
+                </small>
+                {borrowAmount > expectedCash && (
+                  <p className="text-sm text-red-400 mt-1">
+                    Amount cannot exceed expected cash.
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setIsBorrowCashDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={borrowAmount <= 0 || borrowAmount > expectedCash}
+                >
+                  Borrow Cash
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div>
+        <Dialog
           open={isCashCheckoutDialogOpen}
           onOpenChange={setIsCashCheckoutDialogOpen}
         >
@@ -730,6 +594,12 @@ const Sales = () => {
                       </CardTitle>
                     </div>
                     <div>
+                      <CardDescription>Borrowed Cash</CardDescription>
+                      <CardTitle className="text-red-400 ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
+                        {formatCurrency(cashSession.borrowedCash || 0)}
+                      </CardTitle>
+                    </div>
+                    <div>
                       <CardDescription>Credit Revenue</CardDescription>
                       <CardTitle className="ml-2 text-md font-semibold tabular-nums @[250px]/card:text-3xl">
                         {formatCurrency(totalCreditAmount)}
@@ -746,11 +616,7 @@ const Sales = () => {
                     <div className="text-center">
                       <h2 className="text-lg font-medium">Expected Cash</h2>
                       <CardTitle className="text-md font-semibold tabular-nums @[250px]/card:text-3xl text-amber-500">
-                        {formatCurrency(
-                          totalRevenue +
-                            cashSession.openingCash -
-                            totalCreditAmount || 0,
-                        )}
+                        {formatCurrency(expectedCash)}
                       </CardTitle>
                     </div>
                   </div>

@@ -239,7 +239,7 @@ const Employees = () => {
       "Credit Limit",
       "Total Credit",
     ];
-    const data = employeesData.map((employee: Employee) => [
+    const data = filteredEmployees.map((employee: Employee) => [
       employee.name,
       employee.employeeNumber,
       employee.contactNumber,
