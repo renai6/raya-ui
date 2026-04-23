@@ -63,10 +63,10 @@ const TransactionsTable = ({
 
     if (transaction.oldQuantity !== transaction.newQuantity) {
       transactioTypes.push("Stock In");
-    }
-
-    if (transaction.oldRetailPrice !== transaction.newRetailPrice) {
+    } else if (transaction.oldRetailPrice !== transaction.newRetailPrice) {
       transactioTypes.push("Price Update");
+    } else {
+      transactioTypes.push("Stock Description Update");
     }
 
     return transactioTypes.join(", ");
@@ -354,13 +354,12 @@ const TransactionsTable = ({
                 <Table>
                   <TableHeader className="dark:bg-neutral-800">
                     <TableRow>
-                      <TableHead>Invoice #</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead>Total</TableHead>
+                      <TableHead>Invoice No.</TableHead>
                       <TableHead>Payment Type</TableHead>
+                      <TableHead>Total</TableHead>
                       <TableHead>Cash Received</TableHead>
                       <TableHead>Change</TableHead>
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -375,6 +374,7 @@ const TransactionsTable = ({
                         <TableRow
                           className="cursor-pointer hover:bg-muted"
                           key={transaction.id}
+                          onClick={() => handleTransactionClick(transaction)}
                         >
                           <TableCell className="font-medium">
                             {transaction.number || transaction.id}
@@ -400,17 +400,6 @@ const TransactionsTable = ({
                                   transaction.cashReceived - transaction.total
                                 ).toFixed(2)
                               : "0.00"}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleTransactionClick(transaction)
-                              }
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
                           </TableCell>
                         </TableRow>
                       ))

@@ -210,13 +210,7 @@ const Inventory = () => {
   };
 
   const handleDownloadTemplate = () => {
-    const headers = [
-      "Name",
-      "Barcode",
-      "Retail Price",
-      "Wholesale Price",
-      "Stock",
-    ];
+    const headers = ["Name", "Barcode", "Retail Price", "Stock"];
     const worksheet = XLSX.utils.aoa_to_sheet([headers]);
 
     const workbook = XLSX.utils.book_new();
@@ -238,7 +232,7 @@ const Inventory = () => {
   // This is a simple client-side filter; for large datasets, consider server-side filtering
   const filteredProducts = Array.isArray(productsData?.products)
     ? productsData.products.filter((product: Product) =>
-        product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()),
       )
     : [];
 

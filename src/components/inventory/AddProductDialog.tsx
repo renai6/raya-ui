@@ -64,8 +64,8 @@ const AddProductDialog = (props: Props) => {
           <DialogTitle>
             {selectedProduct?.id ? "Edit" : "Add"} Product
           </DialogTitle>
-          <DialogDescription hidden>
-            This is the description of the dialog.
+          <DialogDescription>
+            Product {selectedProduct?.id ? "update" : "creation"} form.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

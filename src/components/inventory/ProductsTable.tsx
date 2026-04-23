@@ -80,7 +80,6 @@ const ProductsTable = (props: Props) => {
                 <TableHead>Barcode</TableHead>
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Retail Price</TableHead>
-                <TableHead className="text-right">Wholesal Price</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,9 +94,6 @@ const ProductsTable = (props: Props) => {
                   <TableCell className="text-right">{product.stock}</TableCell>
                   <TableCell className="text-right">
                     {product.retailPrice.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {product.wholesalePrice.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}
