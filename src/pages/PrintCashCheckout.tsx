@@ -1,5 +1,5 @@
 import { useCashSessionById } from "@/hooks/useCashSession";
-import { useTransactionsByDay } from "@/hooks/useTransactions";
+import { useTransactionsByCashSession } from "@/hooks/useTransactions";
 import { totalDailyCreditRevenue, totalDailyRevenue } from "@/lib/utils";
 import { Route } from "@/routes/print-cash-checkout.$id";
 import { useEffect } from "react";
@@ -10,8 +10,9 @@ const date = new Date();
 const PrintCashCheckout = () => {
   const { id } = Route.useParams();
   const { data: cashSession, isLoading } = useCashSessionById(id);
-  const { data: transactionsToday, isLoading: isLoadingToday } =
-    useTransactionsByDay();
+
+  const { data: transactionsByCashSession, isLoading: isLoadingByCashSession } =
+    useTransactionsByCashSession(cashSession?.id || "");
 
   useEffect(() => {
     const handleAfterPrint = () => {
@@ -26,16 +27,18 @@ const PrintCashCheckout = () => {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isLoadingToday) window.print();
-  }, [isLoading, isLoadingToday]);
+    if (!isLoading && !isLoadingByCashSession) window.print();
+  }, [isLoading, isLoadingByCashSession]);
 
-  if (isLoading || isLoadingToday) {
+  if (isLoading || isLoadingByCashSession) {
     return <div>Loading...</div>;
   }
 
-  const totalRevenue = totalDailyRevenue(transactionsToday || []);
+  const totalRevenue = totalDailyRevenue(transactionsByCashSession || []);
 
-  const totalCreditAmount = totalDailyCreditRevenue(transactionsToday || []);
+  const totalCreditAmount = totalDailyCreditRevenue(
+    transactionsByCashSession || [],
+  );
 
   return (
     <Paper>
@@ -110,15 +113,21 @@ const PrintCashCheckout = () => {
       </RowText>
       <RowText>
         <Text bold style={{ fontSize: 11 }}>
-          Borrowed Cash
-        </Text>
-        <Text>₱{cashSession.borrowedCash.toFixed(2)}</Text>
-      </RowText>
-      <RowText>
-        <Text bold style={{ fontSize: 11 }}>
           Credit Revenue
         </Text>
         <Text>₱{totalCreditAmount.toFixed(2)}</Text>
+      </RowText>
+      <RowText>
+        <Text bold style={{ fontSize: 11 }}>
+          Total Revenue
+        </Text>
+        <Text>₱{totalRevenue.toFixed(2)}</Text>
+      </RowText>
+      <RowText>
+        <Text bold style={{ fontSize: 11 }}>
+          Borrowed Cash
+        </Text>
+        <Text>₱{cashSession.borrowedCash.toFixed(2)}</Text>
       </RowText>
       <RowText>
         <Text bold style={{ fontSize: 11 }}>
@@ -128,13 +137,16 @@ const PrintCashCheckout = () => {
       </RowText>
       <RowText>
         <Text bold style={{ fontSize: 11 }}>
-          Difference
+          Cash Difference
         </Text>
         <Text>
           ₱
           {(
             cashSession?.closingCash -
-            (totalRevenue - totalCreditAmount + cashSession?.openingCash)
+            (totalRevenue -
+              totalCreditAmount +
+              cashSession?.openingCash -
+              cashSession?.borrowedCash)
           ).toFixed(2)}
         </Text>
       </RowText>
