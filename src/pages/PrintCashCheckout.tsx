@@ -110,6 +110,12 @@ const PrintCashCheckout = () => {
       </RowText>
       <RowText>
         <Text bold style={{ fontSize: 11 }}>
+          Borrowed Cash
+        </Text>
+        <Text>₱{cashSession.borrowedCash.toFixed(2)}</Text>
+      </RowText>
+      <RowText>
+        <Text bold style={{ fontSize: 11 }}>
           Credit Revenue
         </Text>
         <Text>₱{totalCreditAmount.toFixed(2)}</Text>
