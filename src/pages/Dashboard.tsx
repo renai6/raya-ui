@@ -53,7 +53,7 @@ const Dashboard = () => {
 
         return sum;
       }, 0),
-    })
+    }),
   );
 
   return (
@@ -115,7 +115,7 @@ const Dashboard = () => {
                         key={`cell-${entry.name}`}
                         fill={COLORS[index % COLORS.length]}
                       />
-                    )
+                    ),
                   )}
                 </Pie>
                 <Tooltip
@@ -153,7 +153,6 @@ const Dashboard = () => {
                     <TableHead>Barcode</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Retail Price</TableHead>
-                    <TableHead className="text-right">Wholesal Price</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -177,9 +176,6 @@ const Dashboard = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         {product.retailPrice.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {product.wholesalePrice.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}

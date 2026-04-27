@@ -6,7 +6,7 @@ export interface Product {
   name: string;
   stock: number;
   retailPrice: number;
-  wholesalePrice: number;
+  wholesalePrice?: number;
   barcode: string;
   updatedAt?: string;
 }
@@ -28,7 +28,7 @@ export interface CartItem {
   name: string;
   stock: number;
   retailPrice: number;
-  wholesalePrice: number;
+  wholesalePrice?: number;
   barcode: string;
   quantity: number;
   selectedPrice: number;

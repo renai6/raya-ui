@@ -21,6 +21,18 @@ export const useTransactionsByDay = () => {
   });
 };
 
+export const useTransactionsByCashSession = (cashSessionId: string) => {
+  return useQuery({
+    queryKey: ["transaction-cash-session", cashSessionId],
+    queryFn: async () => {
+      const response = await api.get(
+        `/transactions/cash-session/${cashSessionId}`,
+      );
+      return response.data;
+    },
+  });
+};
+
 export const useTransactionsByYesterday = () => {
   return useQuery({
     queryKey: ["transaction-yesterday"],
@@ -50,7 +62,7 @@ export const useTransactionsBySpecificDay = (date: Date) => {
       const response = await api.get(
         `/transactions/day?date=${date.getFullYear()}-${
           date.getMonth() + 1
-        }-${date.getDate()}`
+        }-${date.getDate()}`,
       );
       return response.data;
     },

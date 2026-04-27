@@ -40,7 +40,7 @@ import {
   totalDailyCreditRevenue,
   totalDailyRevenue,
 } from "@/lib/utils";
-import { useTransactionsByDay } from "@/hooks/useTransactions";
+import { useTransactionsByCashSession } from "@/hooks/useTransactions";
 import { useCashSession } from "@/hooks/useCashSession";
 import { useCashSessionMutations } from "@/hooks/useCashSessionMutations";
 import { useNavigate } from "@tanstack/react-router";
@@ -51,8 +51,6 @@ const Sales = () => {
   const { setCashReceived, clearCart, setEditQuantityDialogOpen } =
     useSalesActions();
 
-  const { data: transactionsToday, isLoading: isLoadingToday } =
-    useTransactionsByDay();
   const user = useAuthUser();
 
   const { data: cashSession, isLoading: isCashSessionLoading } = useCashSession(
@@ -60,6 +58,8 @@ const Sales = () => {
   );
   const { createCashSession, updateCashSession } = useCashSessionMutations();
 
+  const { data: transactionsByCashSession, isLoading: isLoadingToday } =
+    useTransactionsByCashSession(cashSession?.id || "");
   const isEditQuantityDialogOpen = useIsEditQuantityDialogOpen();
   const cartItems = useSalesCartItems();
   const cashReceived = useSalesCashReceived();
@@ -236,9 +236,11 @@ const Sales = () => {
     );
   }
 
-  const totalRevenue = totalDailyRevenue(transactionsToday || []);
+  const totalRevenue = totalDailyRevenue(transactionsByCashSession || []);
 
-  const totalCreditAmount = totalDailyCreditRevenue(transactionsToday || []);
+  const totalCreditAmount = totalDailyCreditRevenue(
+    transactionsByCashSession || [],
+  );
 
   const expectedCash =
     totalRevenue +
@@ -267,7 +269,7 @@ const Sales = () => {
       {/* Header */}
       <Header title="Sales Checkout" user={{ email: user?.email }} />
 
-      <div className="grid lg:grid-cols-3 gap-7">
+      <div className="grid lg:grid-cols-4 gap-7">
         {/* Left Column - Barcode Input & Item List */}
         <div className="lg:col-span-2 space-y-6">
           {/* Barcode Scanner */}
@@ -283,7 +285,7 @@ const Sales = () => {
         </div>
 
         {/* Right Column - Summary Card */}
-        <div className="space-y-8">
+        <div className="lg:col-span-2 space-y-8">
           <SummaryCard
             paymentType={paymentType}
             setPaymentType={setPaymentType}

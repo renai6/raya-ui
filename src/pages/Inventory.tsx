@@ -137,14 +137,14 @@ const Inventory = () => {
       updateProduct({
         ...form,
         retailPrice: Number(form.retailPrice),
-        wholesalePrice: Number(form.wholesalePrice),
+        wholesalePrice: 0,
         stock: Number(form.stock),
       });
     } else {
       createProduct({
         ...form,
         retailPrice: Number(form.retailPrice),
-        wholesalePrice: Number(form.wholesalePrice),
+        wholesalePrice: 0,
         stock: Number(form.stock),
       });
     }
@@ -196,8 +196,8 @@ const Inventory = () => {
       name: row[0]?.toString() || "",
       barcode: row[1]?.toString() || "",
       retailPrice: Number(row[2]) || 0,
-      wholesalePrice: Number(row[3]) || 0,
-      stock: Number(row[4]) || 0,
+      stock: Number(row[3]) || 0,
+      wholesalePrice: 0,
     }));
 
     await createBulkProducts.mutate({ products, isPriceExe });

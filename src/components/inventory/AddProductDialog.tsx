@@ -23,7 +23,7 @@ type Props = {
     name: string;
     barcode: string;
     retailPrice: number;
-    wholesalePrice: number;
+    wholesalePrice?: number;
     stock: number;
   };
   selectedProduct: Product | null;

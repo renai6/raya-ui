@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, MoveRight, Eye, Printer } from "lucide-react";
+import { Download, MoveRight, Printer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 import * as XLSX from "xlsx";
@@ -32,7 +32,6 @@ import { useState } from "react";
 import { useSalesDated } from "@/hooks/useSalesDated";
 import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 
 const TransactionsTable = ({
   inventoryTransactions,
@@ -44,7 +43,6 @@ const TransactionsTable = ({
     products: Product[];
   };
 }) => {
-  const navigate = useNavigate();
   const [startDate, setStartDate] = useState<undefined | Date>();
   const [endDate, setEndDate] = useState<undefined | Date>();
 

@@ -34,7 +34,7 @@ export const useSaleStore = create<SalesState>((set) => ({
     addProductToCart: (item: Product) => {
       set((state) => {
         const existingItemIndex = state.cartItems.findIndex(
-          (cartItem) => cartItem.id === item.id
+          (cartItem) => cartItem.id === item.id,
         );
 
         if (existingItemIndex !== -1) {
@@ -67,14 +67,10 @@ export const useSaleStore = create<SalesState>((set) => ({
     updatePriceType: (id: string, value: SaleType) => {
       set((state) => {
         const itemIndex = state.cartItems.findIndex(
-          (cartItem) => cartItem.id === id
+          (cartItem) => cartItem.id === id,
         );
 
         state.cartItems[itemIndex].saleType = value;
-        state.cartItems[itemIndex].selectedPrice =
-          value === "RETAIL"
-            ? state.cartItems[itemIndex].retailPrice
-            : state.cartItems[itemIndex].wholesalePrice;
 
         return { cartItems: [...state.cartItems] };
       });
@@ -82,7 +78,7 @@ export const useSaleStore = create<SalesState>((set) => ({
     updateQuantity: (id: string, value: number) => {
       set((state) => {
         const itemIndex = state.cartItems.findIndex(
-          (cartItem) => cartItem.id === id
+          (cartItem) => cartItem.id === id,
         );
         state.cartItems[itemIndex].quantity = value;
 

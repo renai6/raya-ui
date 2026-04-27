@@ -103,7 +103,7 @@ const CartItems = (props: Props) => {
                             htmlFor={`wholesale-${item.id}-${item.saleType}`}
                             className="text-sm text-gray-300 cursor-pointer"
                           >
-                            Wholesale - ₱{item.wholesalePrice.toFixed(2)}
+                            Wholesale - ₱{item.wholesalePrice?.toFixed(2)}
                           </Label>
                         </div>
                       </RadioGroup>
