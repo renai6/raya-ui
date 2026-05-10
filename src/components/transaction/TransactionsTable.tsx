@@ -32,6 +32,7 @@ import { useState } from "react";
 import { useSalesDated } from "@/hooks/useSalesDated";
 import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
+import { Input } from "../ui/input";
 
 const TransactionsTable = ({
   inventoryTransactions,
@@ -51,6 +52,9 @@ const TransactionsTable = ({
 
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+
+  const [productNameSearch, setProductNameSearch] = useState("");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
 
   const { data: sales } = useSalesDated(startDate, endDate);
   const { data: transactions, isLoading: isTransactionsLoading } =
@@ -145,20 +149,65 @@ const TransactionsTable = ({
     toast.success("Sales report exported successfully!");
   };
 
+  const handleExportTransactions = () => {
+    const filteredTransactions =
+      transactions?.filter(
+        (transaction: any) =>
+          (transaction.number || transaction.id)
+            .toString()
+            .toLowerCase()
+            .includes(invoiceSearch.toLowerCase()) &&
+          (!startDate || new Date(transaction.createdAt) >= startDate) &&
+          (!endDate || new Date(transaction.createdAt) <= endDate),
+      ) || [];
+
+    const headers = [
+      "Date",
+      "Invoice No.",
+      "Payment Type",
+      "Total",
+      "Cash Received",
+      "Change",
+    ];
+    const data = filteredTransactions.map((transaction: any) => [
+      new Date(transaction.createdAt).toLocaleDateString(),
+      transaction.number || transaction.id,
+      transaction.cashReceived === 0 ? "CREDIT" : "CASH",
+      `₱${transaction.total?.toFixed(2)}`,
+      `₱${transaction.cashReceived?.toFixed(2)}`,
+      `₱${
+        transaction.cashReceived > 0
+          ? (transaction.cashReceived - transaction.total).toFixed(2)
+          : "0.00"
+      }`,
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+    XLSX.writeFile(
+      workbook,
+      `transactions-report-${
+        startDate ? startDate.toISOString().split("T")[0] : "all"
+      }-${endDate ? endDate.toISOString().split("T")[0] : "all"}.xlsx`,
+    );
+    toast.success("Transactions report exported successfully!");
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <Tabs
-        defaultValue="sales"
+        defaultValue="inventory"
         onValueChange={(e) => {
           console.log(e);
         }}
       >
-        <TabsList>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="transactions">Transactions</TabsTrigger>
-        </TabsList>
         <div className="flex justify-between items-end">
+          <TabsList>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="sales">Sales</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          </TabsList>
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
               <Popover
@@ -216,7 +265,6 @@ const TransactionsTable = ({
                     captionLayout="dropdown"
                     disabled={(date) => (startDate ? date < startDate : false)}
                     onSelect={(date) => {
-                      console.log(date || new Date());
                       setEndDate(date || new Date());
                       setIsEndCalendarOpen(false);
                     }}
@@ -250,6 +298,12 @@ const TransactionsTable = ({
             </CardHeader>
 
             <CardContent>
+              <Input
+                placeholder="Search product name"
+                className="mb-4"
+                value={productNameSearch}
+                onChange={(e) => setProductNameSearch(e.target.value)}
+              />
               <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
                 <Table>
                   <TableHeader className="dark:bg-neutral-800">
@@ -264,22 +318,37 @@ const TransactionsTable = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {inventoryTransactions.map((transaction: any) => (
-                      <TableRow
-                        className="cursor-pointer hover:bg-muted"
-                        key={transaction.id}
-                      >
-                        <TableCell className="font-medium">
-                          {transaction.createdAt.split("T")[0]}
-                        </TableCell>
-                        <TableCell>{transaction.product.name}</TableCell>
-                        <TableCell>{transaction.product.barcode}</TableCell>
-                        <TableCell>{getQuantityChange(transaction)}</TableCell>
-                        <TableCell>{getPriceChange(transaction)}</TableCell>
-                        <TableCell>{getTransactionType(transaction)}</TableCell>
-                        <TableCell>{transaction.reason}</TableCell>
-                      </TableRow>
-                    ))}
+                    {inventoryTransactions
+                      .filter(
+                        (transaction: any) =>
+                          transaction.product.name
+                            .toLowerCase()
+                            .includes(productNameSearch.toLowerCase()) &&
+                          (!startDate ||
+                            new Date(transaction.createdAt) >= startDate) &&
+                          (!endDate ||
+                            new Date(transaction.createdAt) <= endDate),
+                      )
+                      .map((transaction: any) => (
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted"
+                          key={transaction.id}
+                        >
+                          <TableCell className="font-medium">
+                            {transaction.createdAt.split("T")[0]}
+                          </TableCell>
+                          <TableCell>{transaction.product.name}</TableCell>
+                          <TableCell>{transaction.product.barcode}</TableCell>
+                          <TableCell>
+                            {getQuantityChange(transaction)}
+                          </TableCell>
+                          <TableCell>{getPriceChange(transaction)}</TableCell>
+                          <TableCell>
+                            {getTransactionType(transaction)}
+                          </TableCell>
+                          <TableCell>{transaction.reason}</TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -306,6 +375,12 @@ const TransactionsTable = ({
             </CardHeader>
 
             <CardContent>
+              <Input
+                placeholder="Search product name"
+                className="mb-4"
+                value={productNameSearch}
+                onChange={(e) => setProductNameSearch(e.target.value)}
+              />
               <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
                 <Table>
                   <TableHeader className="dark:bg-neutral-800">
@@ -317,17 +392,23 @@ const TransactionsTable = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.products.map((product: Product) => (
-                      <TableRow
-                        className="cursor-pointer hover:bg-muted"
-                        key={product.id}
-                      >
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.barcode}</TableCell>
-                        <TableCell>{product.retailPrice}</TableCell>
-                        <TableCell>{getTotalItemsSold(product)}</TableCell>
-                      </TableRow>
-                    ))}
+                    {products.products
+                      .filter((product: Product) =>
+                        product.name
+                          .toLowerCase()
+                          .includes(productNameSearch.toLowerCase()),
+                      )
+                      .map((product: Product) => (
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted"
+                          key={product.id}
+                        >
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>{product.barcode}</TableCell>
+                          <TableCell>{product.retailPrice}</TableCell>
+                          <TableCell>{getTotalItemsSold(product)}</TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </div>
@@ -344,10 +425,20 @@ const TransactionsTable = ({
                     A list of your sales transactions
                   </small>
                 </div>
+                <Button variant="default" onClick={handleExportTransactions}>
+                  <Download className="w-4" />
+                  Export
+                </Button>
               </CardTitle>
             </CardHeader>
 
             <CardContent>
+              <Input
+                placeholder="Search invoice number"
+                className="mb-4"
+                value={invoiceSearch}
+                onChange={(e) => setInvoiceSearch(e.target.value)}
+              />
               <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
                 <Table>
                   <TableHeader className="dark:bg-neutral-800">
@@ -368,39 +459,53 @@ const TransactionsTable = ({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      transactions?.map((transaction: any) => (
-                        <TableRow
-                          className="cursor-pointer hover:bg-muted"
-                          key={transaction.id}
-                          onClick={() => handleTransactionClick(transaction)}
-                        >
-                          <TableCell className="font-medium">
-                            {transaction.number || transaction.id}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(
-                              transaction.createdAt,
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            ₱{transaction.total?.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            {transaction.cashReceived === 0 ? "CREDIT" : "CASH"}
-                          </TableCell>
-                          <TableCell>
-                            ₱{transaction.cashReceived?.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            ₱
-                            {transaction.cashReceived > 0
-                              ? (
-                                  transaction.cashReceived - transaction.total
-                                ).toFixed(2)
-                              : "0.00"}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      transactions
+                        ?.filter(
+                          (transaction: any) =>
+                            (transaction.number || transaction.id)
+                              .toString()
+                              .toLowerCase()
+                              .includes(invoiceSearch.toLowerCase()) &&
+                            (!startDate ||
+                              new Date(transaction.createdAt) >= startDate) &&
+                            (!endDate ||
+                              new Date(transaction.createdAt) <= endDate),
+                        )
+                        .map((transaction: any) => (
+                          <TableRow
+                            className="cursor-pointer hover:bg-muted"
+                            key={transaction.id}
+                            onClick={() => handleTransactionClick(transaction)}
+                          >
+                            <TableCell>
+                              {new Date(
+                                transaction.createdAt,
+                              ).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {transaction.number || transaction.id}
+                            </TableCell>
+                            <TableCell>
+                              ₱{transaction.total?.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              {transaction.cashReceived === 0
+                                ? "CREDIT"
+                                : "CASH"}
+                            </TableCell>
+                            <TableCell>
+                              ₱{transaction.cashReceived?.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              ₱
+                              {transaction.cashReceived > 0
+                                ? (
+                                    transaction.cashReceived - transaction.total
+                                  ).toFixed(2)
+                                : "0.00"}
+                            </TableCell>
+                          </TableRow>
+                        ))
                     )}
                   </TableBody>
                 </Table>
