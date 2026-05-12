@@ -75,20 +75,24 @@ const TransactionsTable = ({
   };
 
   const getQuantityChange = (transaction: any) => {
-    if (transaction.oldQuantity < transaction.newQuantity) {
+    if (transaction.oldQuantity === transaction.newQuantity) {
+      return "No Change";
+    } else {
       return (
         <div className="flex items-center gap-2">
-          {transaction.newQuantity - transaction.oldQuantity}{" "}
+          {transaction.oldQuantity === 0
+            ? 0
+            : transaction.newQuantity - transaction.oldQuantity}{" "}
           <MoveRight className="w-4" /> {transaction.newQuantity}
         </div>
       );
-    } else {
-      return transaction.oldQuantity - transaction.newQuantity;
     }
   };
 
   const getPriceChange = (transaction: any) => {
-    if (transaction.oldRetailPrice !== transaction.newRetailPrice) {
+    if (transaction.reason === "Initial stock") {
+      return transaction.newRetailPrice;
+    } else if (transaction.oldRetailPrice !== transaction.newRetailPrice) {
       return (
         <div className="flex items-center gap-2">
           {transaction.oldRetailPrice} <MoveRight className="w-4" />{" "}
@@ -96,7 +100,7 @@ const TransactionsTable = ({
         </div>
       );
     } else {
-      return transaction.oldRetailPrice;
+      return "No Changes";
     }
   };
 

@@ -34,7 +34,7 @@ const PrintSale = () => {
   return (
     <Paper>
       <Text align="center" bold style={{ fontSize: 9 }}>
-        Steel Colors and Metal Products
+        {import.meta.env.VITE_CANTEEN_BRANCH_NAME}
       </Text>
       <Text
         style={{ fontSize: transaction?.cashReceived === 0 ? 10 : 11 }}
@@ -44,7 +44,7 @@ const PrintSale = () => {
         Canteen
       </Text>
       <Text align="center" style={{ fontSize: 11 }}>
-        Boalan, Zamboanga City{" "}
+        {import.meta.env.VITE_CANTEEN_BRANCH_ADDRESS}
       </Text>
 
       <Space size={[10, 10]} />

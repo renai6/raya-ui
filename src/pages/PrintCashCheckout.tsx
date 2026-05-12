@@ -43,13 +43,13 @@ const PrintCashCheckout = () => {
   return (
     <Paper>
       <Text align="center" bold style={{ fontSize: 9 }}>
-        Steel Colors and Metal Products
+        {import.meta.env.VITE_CANTEEN_BRANCH_NAME}
       </Text>
       <Text style={{ fontSize: 11 }} align="center" bold>
         Canteen
       </Text>
       <Text align="center" style={{ fontSize: 11 }}>
-        Boalan, Zamboanga City{" "}
+        {import.meta.env.VITE_CANTEEN_BRANCH_ADDRESS}
       </Text>
       <Text align="center" style={{ fontSize: 11 }}>
         {date.toDateString()} {date.toLocaleTimeString()}
@@ -133,7 +133,7 @@ const PrintCashCheckout = () => {
         <Text bold style={{ fontSize: 11 }}>
           Cash Checkout
         </Text>
-        <Text>₱{cashSession?.closingCash.toFixed(2)}</Text>
+        <Text>₱{(cashSession?.closingCash || 0).toFixed(2)}</Text>
       </RowText>
       <RowText>
         <Text bold style={{ fontSize: 11 }}>
