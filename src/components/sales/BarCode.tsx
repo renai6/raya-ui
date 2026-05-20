@@ -4,7 +4,11 @@ import { PenLine, Scan } from "lucide-react";
 import { Input } from "../ui/input";
 import type { Product } from "@/types";
 import { toast } from "sonner";
-import { useQuantity, useSalesActions } from "@/stores/sales";
+import {
+  useQuantity,
+  useSalesActions,
+  useSalesCartItems,
+} from "@/stores/sales";
 
 import {
   Command,
@@ -32,6 +36,7 @@ const SalesBarCode = ({
   const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [searchProducts, setSearchProducts] = useState<Product[]>([]);
+  const cartItems = useSalesCartItems();
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +70,13 @@ const SalesBarCode = ({
         toast.error(`Product ${product.name} only has ${product.stock} left`);
 
         return;
+      } else if (
+        product &&
+        cartItems.some(
+          (item) => item.id === product.id && item.quantity >= product.stock,
+        )
+      ) {
+        toast.error(`Product ${product.name} only has ${product.stock} left`);
       } else if (product) {
         // Add directly to cart with default settings
         addProductToCart(product);
@@ -106,6 +118,12 @@ const SalesBarCode = ({
       toast.error(`Product ${product.name} only has ${product.stock} left`);
 
       return;
+    } else if (
+      cartItems.some(
+        (item) => item.id === product.id && item.quantity >= product.stock,
+      )
+    ) {
+      toast.error(`Product ${product.name} only has ${product.stock} left`);
     } else {
       // Add directly to cart with default settings
       addProductToCart(product);

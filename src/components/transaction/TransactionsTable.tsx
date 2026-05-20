@@ -100,7 +100,7 @@ const TransactionsTable = ({
         </div>
       );
     } else {
-      return "No Changes";
+      return "No Change";
     }
   };
 
