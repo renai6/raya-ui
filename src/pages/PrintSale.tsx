@@ -1,13 +1,15 @@
 import { useTransaction } from "@/hooks/useTransaction";
 import { Route } from "@/routes/print.$id";
+import { useAuthUser } from "@/stores/authStore";
 import { useEffect } from "react";
 import { Dot, Paper, RowText, Space, Text } from "react-receipt-slip";
 
 const date = new Date();
 
-const Print = () => {
+const PrintSale = () => {
   const { id } = Route.useParams();
   const { data: transaction, isLoading } = useTransaction(id);
+  const user = useAuthUser();
 
   useEffect(() => {
     const handleAfterPrint = () => {
@@ -31,23 +33,38 @@ const Print = () => {
 
   return (
     <Paper>
-      <Text align="center" bold>
-        Steel Colors and Metal Products
+      <Text align="center" bold style={{ fontSize: 9 }}>
+        {import.meta.env.VITE_CANTEEN_BRANCH_NAME}
       </Text>
-      <Text align="center" bold>
+      <Text
+        style={{ fontSize: transaction?.cashReceived === 0 ? 10 : 11 }}
+        align="center"
+        bold
+      >
         Canteen
       </Text>
-      <Text align="center">Test Morning Glory, Putik, ZC </Text>
-      <Text align="center">TIN: 000-000-000-0000</Text>
-      <Text align="center">Mobile: 0000-000-0000</Text>
-      <Text align="center">
-        {date.toDateString()} {date.toLocaleTimeString()}
+      <Text align="center" style={{ fontSize: 11 }}>
+        {import.meta.env.VITE_CANTEEN_BRANCH_ADDRESS}
       </Text>
-      <Space size={[20, 10]} />
-      <Dot />
+
+      <Space size={[10, 10]} />
+      <Text align="center" style={{ fontSize: 11 }}>
+        Sales Invoice
+      </Text>
+      <Space size={[10, 10]} />
+      <Text align="left" style={{ fontSize: 10 }}>
+        {date.toLocaleTimeString()}, {date.toDateString()}
+      </Text>
+      <Text align="left" style={{ fontSize: 10 }}>
+        Cahier: {user.email}
+      </Text>
+      <Text align="left" style={{ fontSize: 10 }}>
+        Sales Invoice #: {transaction?.number || ""}
+      </Text>
+      <Space size={[10, 10]} />
       {transaction?.sales.map((item: any) => (
         <div key={item.id}>
-          <RowText>
+          <RowText style={{ fontSize: 11 }}>
             <Text bold>{item.product.name}</Text>
             <Text>{(item.total * item.quantity).toFixed(2)}</Text>
           </RowText>
@@ -61,18 +78,22 @@ const Print = () => {
       <hr />
       <Space size={[5, 5]} />
       <RowText>
-        <Text bold>Total</Text>
+        <Text bold style={{ fontSize: 11 }}>
+          Total
+        </Text>
         <Text>{transaction?.total.toFixed(2)}</Text>
       </RowText>
       <Space size={[5, 5]} />
       <Dot />
       <Space size={[5, 5]} />
       <RowText>
-        <Text bold>Cash Received</Text>
+        <Text bold style={{ fontSize: 11 }}>
+          Cash Received
+        </Text>
         <Text>₱{transaction?.cashReceived.toFixed(2)}</Text>
       </RowText>
       <RowText>
-        <Text bold>Change</Text>
+        <Text style={{ fontSize: 11 }}>Change</Text>
         <Text>
           ₱
           {transaction?.cashReceived > 0
@@ -81,10 +102,9 @@ const Print = () => {
         </Text>
       </RowText>
       <Space size={[5, 5]} />
-      <Dot />
       <Space size={[10, 10]} />
       <Space size={[10, 10]} />
-      <Text align="center">
+      <Text align="center" style={{ fontSize: 11 }}>
         {transaction?.cashReceived === 0
           ? "Transaction recorded as credit"
           : ""}
@@ -100,14 +120,23 @@ const Print = () => {
       )}
 
       <Space size={[10, 10]} />
+
       <Space size={[10, 10]} />
-      <Text align="center" bold>
-        OR No: {transaction?.id}{" "}
+      <Text align="center" style={{ fontSize: 11 }}>
+        This receipt is your proof of purchase. Merchandise received in good
+        condition.
       </Text>
       <Space size={[10, 10]} />
       <Space size={[10, 10]} />
-      <Text align="center">THIS IS YOUR OFFICIAL INVOICE</Text>
+      <Space size={[10, 10]} />
+      <Text
+        align="center"
+        style={{ fontSize: 11, marginRight: 10, marginLeft: 10 }}
+      >
+        Raya POS v{import.meta.env.PACKAGE_VERSION}
+      </Text>
     </Paper>
   );
 };
-export default Print;
+
+export default PrintSale;

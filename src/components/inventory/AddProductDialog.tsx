@@ -23,7 +23,7 @@ type Props = {
     name: string;
     barcode: string;
     retailPrice: number;
-    wholesalePrice: number;
+    wholesalePrice?: number;
     stock: number;
   };
   selectedProduct: Product | null;
@@ -64,8 +64,8 @@ const AddProductDialog = (props: Props) => {
           <DialogTitle>
             {selectedProduct?.id ? "Edit" : "Add"} Product
           </DialogTitle>
-          <DialogDescription hidden>
-            This is the description of the dialog.
+          <DialogDescription>
+            Product {selectedProduct?.id ? "update" : "creation"} form.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -91,33 +91,18 @@ const AddProductDialog = (props: Props) => {
                 required
               />
             </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Label className="mb-2">Retail Price</Label>
-                <Input
-                  name="retailPrice"
-                  type="number"
-                  step="0.01"
-                  value={form?.retailPrice}
-                  onChange={handleFormChange}
-                  placeholder="Retail Price"
-                  required
-                  disabled={isDeleting}
-                />
-              </div>
-              <div className="flex-1">
-                <Label className="mb-2">Wholesale Price</Label>
-                <Input
-                  name="wholesalePrice"
-                  type="number"
-                  step="0.01"
-                  value={form?.wholesalePrice}
-                  onChange={handleFormChange}
-                  placeholder="Wholesale Price"
-                  required
-                  disabled={isDeleting}
-                />
-              </div>
+            <div>
+              <Label className="mb-2">Retail Price</Label>
+              <Input
+                name="retailPrice"
+                type="number"
+                step="0.01"
+                value={form?.retailPrice}
+                onChange={handleFormChange}
+                placeholder="Retail Price"
+                required
+                disabled={isDeleting}
+              />
             </div>
             <div>
               <Label className="mb-2">Stock</Label>

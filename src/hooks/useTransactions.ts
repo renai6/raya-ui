@@ -21,11 +21,49 @@ export const useTransactionsByDay = () => {
   });
 };
 
+export const useTransactionsByCashSession = (cashSessionId: string) => {
+  return useQuery({
+    queryKey: ["transaction-cash-session", cashSessionId],
+    queryFn: async () => {
+      const response = await api.get(
+        `/transactions/cash-session/${cashSessionId}`,
+      );
+      return response.data;
+    },
+  });
+};
+
 export const useTransactionsByYesterday = () => {
   return useQuery({
     queryKey: ["transaction-yesterday"],
     queryFn: async () => {
       const response = await api.get(`/transactions/yesterday`);
+      return response.data;
+    },
+  });
+};
+
+export const useTransactionsByMonth = (month: number, year: number) => {
+  return useQuery({
+    queryKey: ["transactions-month", year, month],
+    queryFn: async () => {
+      const response = await api.get(`/transactions/monthly/${year}/${month}`);
+      return response.data;
+    },
+  });
+};
+
+export const useTransactionsBySpecificDay = (date: Date) => {
+  const dateString = date.toISOString().split("T")[0];
+
+  return useQuery({
+    queryKey: ["transaction-day", dateString],
+    queryFn: async () => {
+      const response = await api.get(
+        `/transactions/day?date=${date.getFullYear()}-${
+          date.getMonth() + 1
+        }-${date.getDate()}`,
+      );
       return response.data;
     },
   });

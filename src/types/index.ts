@@ -6,8 +6,9 @@ export interface Product {
   name: string;
   stock: number;
   retailPrice: number;
-  wholesalePrice: number;
+  wholesalePrice?: number;
   barcode: string;
+  updatedAt?: string;
 }
 
 export interface Employee {
@@ -16,6 +17,7 @@ export interface Employee {
   name: string;
   contactNumber: string;
   email: string;
+  creditLimit: number;
   totalCredit?: number;
   createdAt?: string;
 }
@@ -26,7 +28,7 @@ export interface CartItem {
   name: string;
   stock: number;
   retailPrice: number;
-  wholesalePrice: number;
+  wholesalePrice?: number;
   barcode: string;
   quantity: number;
   selectedPrice: number;

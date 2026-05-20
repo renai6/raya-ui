@@ -4,24 +4,39 @@ import { PenLine, Scan } from "lucide-react";
 import { Input } from "../ui/input";
 import type { Product } from "@/types";
 import { toast } from "sonner";
-import { useQuantity, useSalesActions } from "@/stores/sales";
+import {
+  useQuantity,
+  useSalesActions,
+  useSalesCartItems,
+} from "@/stores/sales";
+
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 type Props = {
   products: Product[];
   isWaitingBarcode: boolean;
   setIsWaitingBarcode: React.Dispatch<React.SetStateAction<boolean>>;
+  isCashSessionDialogOpen: boolean;
 };
 
 const SalesBarCode = ({
   products,
   isWaitingBarcode,
   setIsWaitingBarcode,
+  isCashSessionDialogOpen,
 }: Props) => {
   const { setCurrentScannedItem, addProductToCart, setQuantity } =
     useSalesActions();
   const quantity = useQuantity();
   const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const [searchProducts, setSearchProducts] = useState<Product[]>([]);
+  const cartItems = useSalesCartItems();
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -34,12 +49,67 @@ const SalesBarCode = ({
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!barcodeInput.trim()) return;
 
-    const product = products.find(
-      (p: Product) => p.barcode === barcodeInput.trim()
-    );
+    const barcodeEntry = barcodeInput.trim();
 
+    if (isCashSessionDialogOpen || !barcodeEntry) {
+      setQuantity(0);
+      setBarcodeInput("");
+
+      return;
+    }
+
+    if (/^\d{8,}$/.test(barcodeEntry) || /^[A-Za-z]\d+$/.test(barcodeEntry)) {
+      const product = products.find((p: Product) => p.barcode === barcodeEntry);
+
+      if (product && product.stock <= 0) {
+        toast.error(`Product ${product.name} is out of stock`);
+
+        return;
+      } else if (product && product.stock < quantity) {
+        toast.error(`Product ${product.name} only has ${product.stock} left`);
+
+        return;
+      } else if (
+        product &&
+        cartItems.some(
+          (item) => item.id === product.id && item.quantity >= product.stock,
+        )
+      ) {
+        toast.error(`Product ${product.name} only has ${product.stock} left`);
+      } else if (product) {
+        // Add directly to cart with default settings
+        addProductToCart(product);
+        setCurrentScannedItem(product);
+
+        // Clear the current scanned item after 3 seconds
+        setTimeout(() => setCurrentScannedItem(null), 3000);
+        setIsScanning(false);
+      } else {
+        // Handle unknown barcode
+        toast.error(`Product ${barcodeInput} not found`);
+      }
+
+      setQuantity(0);
+      setBarcodeInput("");
+
+      setSearchProducts([]);
+    } else {
+      const searchProducts = products.filter((p: Product) =>
+        p.name.toLowerCase().includes(barcodeEntry.toLowerCase()),
+      );
+
+      if (searchProducts.length === 0) {
+        toast.error(`Products containing ${barcodeInput} not found`);
+
+        setBarcodeInput("");
+      } else {
+        setSearchProducts(searchProducts);
+      }
+    }
+  };
+
+  const onSelectProduct = (product: Product) => {
     if (product && product.stock <= 0) {
       toast.error(`Product ${product.name} is out of stock`);
 
@@ -48,7 +118,13 @@ const SalesBarCode = ({
       toast.error(`Product ${product.name} only has ${product.stock} left`);
 
       return;
-    } else if (product) {
+    } else if (
+      cartItems.some(
+        (item) => item.id === product.id && item.quantity >= product.stock,
+      )
+    ) {
+      toast.error(`Product ${product.name} only has ${product.stock} left`);
+    } else {
       // Add directly to cart with default settings
       addProductToCart(product);
       setCurrentScannedItem(product);
@@ -56,22 +132,20 @@ const SalesBarCode = ({
       // Clear the current scanned item after 3 seconds
       setTimeout(() => setCurrentScannedItem(null), 3000);
       setIsScanning(false);
-    } else {
-      // Handle unknown barcode
-      toast.error(`Product ${barcodeInput} not found`);
     }
 
     setQuantity(0);
     setBarcodeInput("");
+    setSearchProducts([]);
   };
 
   return (
-    <Card className="gap-0 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
-      <CardHeader className="mb-1">
-        <CardTitle className="flex justify-between items-center space-x-2">
+    <Card className="p-2 gap-0 shadow-[0_8px_10px_rgba(0,0,0,0.3)] border-none">
+      <CardHeader className="px-2 pt-2">
+        <CardTitle className="flex justify-between items-center space-x-1">
           <div className="flex gap-3 items-center">
             <Scan className="w-5 h-5 text-yellow-400" />
-            <span>Barcode Scanner</span>
+            <span>Item Scanner</span>
           </div>
           <div>
             {quantity ? (
@@ -83,19 +157,19 @@ const SalesBarCode = ({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative p-2">
         <form
           onSubmit={handleBarcodeSubmit}
-          className="flex space-x-3 items-center"
+          className="flex items-center flex-col"
         >
-          <div className="flex-1 relative">
+          <div className="flex-1 w-full">
             <Input
               ref={inputRef}
               type="text"
               placeholder="Scan barcode or enter manually..."
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
-              className="text-lg h-12 pr-12"
+              className="text-lg h-12"
               autoComplete="off"
               onBlur={() => setIsWaitingBarcode(false)}
             />
@@ -105,6 +179,24 @@ const SalesBarCode = ({
               </div>
             )}
           </div>
+          {searchProducts.length > 0 && (
+            <Command className="rounded-lg border shadow-md mt-2 max-h-[200px] custom-scrollbar border py-1">
+              <CommandList>
+                <CommandGroup heading="Products" className="py-0">
+                  {searchProducts.slice(0, 10).map((sProduct) => (
+                    <CommandItem
+                      key={sProduct.id}
+                      onSelect={() => onSelectProduct(sProduct)}
+                      className="flex justify-between items-center"
+                    >
+                      <span>{sProduct.name}</span>
+                      <span># {sProduct.barcode}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          )}
         </form>
       </CardContent>
     </Card>
