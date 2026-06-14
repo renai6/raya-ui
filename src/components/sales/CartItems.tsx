@@ -1,6 +1,6 @@
 import type { CartItem } from "@/types";
 import { Button } from "../ui/button";
-import { Minus, Plus, /*TicketPercent,*/ Trash2 } from "lucide-react";
+import { Minus, Plus, TicketPercent, Trash2 } from "lucide-react";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Badge } from "../ui/badge";
@@ -64,7 +64,7 @@ const CartItems = (props: Props) => {
               <div className="flex items-center space-x-3">
                 <Popover>
                   <PopoverTrigger>
-                    {/* <TicketPercent className="w-4 h-4 text-amber-400" /> */}
+                    <TicketPercent className="w-4 h-4 text-amber-400" />
                   </PopoverTrigger>
                   <PopoverContent className="min-w-[400px] mt-2">
                     <div className="space-y-2">

@@ -104,6 +104,18 @@ const AddProductDialog = (props: Props) => {
                 disabled={isDeleting}
               />
             </div>
+            <div className="flex-1">
+              <Label className="mb-2">Wholesale Price</Label>
+              <Input
+                name="wholesalePrice"
+                type="number"
+                step="0.01"
+                value={form?.wholesalePrice}
+                onChange={handleFormChange}
+                placeholder="Wholesale Price"
+                required
+              />
+            </div>
             <div>
               <Label className="mb-2">Stock</Label>
               <Input

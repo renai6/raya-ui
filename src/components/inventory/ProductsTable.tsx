@@ -25,11 +25,19 @@ const ProductsTable = (props: Props) => {
   const { products, setSearchTerm, onItemClick } = props;
 
   const handleExport = () => {
-    const headers = ["Name", "Barcode", "Retail Price", "Stock", "Last Update"];
+    const headers = [
+      "Name",
+      "Barcode",
+      "Retail Price",
+      "Wholesale Price",
+      "Stock",
+      "Last Update",
+    ];
     const data = products.map((product) => [
       product.name,
       product.barcode,
       product.retailPrice,
+      product.wholesalePrice,
       product.stock,
       product.updatedAt?.replace("T", " "),
     ]);
@@ -80,6 +88,7 @@ const ProductsTable = (props: Props) => {
                 <TableHead>Barcode</TableHead>
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Retail Price</TableHead>
+                <TableHead className="text-right">Wholesale Price</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -94,6 +103,9 @@ const ProductsTable = (props: Props) => {
                   <TableCell className="text-right">{product.stock}</TableCell>
                   <TableCell className="text-right">
                     {product.retailPrice.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {product.wholesalePrice?.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}

@@ -70,7 +70,12 @@ export const useSaleStore = create<SalesState>((set) => ({
           (cartItem) => cartItem.id === id,
         );
 
-        state.cartItems[itemIndex].saleType = value;
+        const item = state.cartItems[itemIndex];
+        item.saleType = value;
+        item.selectedPrice =
+          value === "WHOLESALE"
+            ? (item.wholesalePrice ?? item.retailPrice)
+            : item.retailPrice;
 
         return { cartItems: [...state.cartItems] };
       });
