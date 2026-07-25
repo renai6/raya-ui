@@ -9,7 +9,7 @@ const Cart = () => {
   const cartItems = useSalesCartItems();
 
   return (
-    <Card className="gap-2 mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-none">
+    <Card className="gap-2 mb-3 shadow-card">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">

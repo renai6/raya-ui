@@ -43,7 +43,7 @@ const TodaySummary = ({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <Card className="shadow-[0_8px_15px_rgba(0,0,0,0.3)] border-none mt-2">
+        <Card className="shadow-card mt-2">
           <CardContent className="flex justify-between items-center">
             <h2 className="font-semibold flex items-center gap-2">
               <SquareMenu className="w-4 text-amber-500" />

@@ -48,7 +48,7 @@ const SummaryCard = ({
   const cashInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <Card className="shadow-lg gap-1 shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-none">
+    <Card className="gap-1 shadow-card">
       <CardHeader>
         <CardTitle className="flex justify-between items-center space-x-2">
           <div className="flex gap-3 items-center">
