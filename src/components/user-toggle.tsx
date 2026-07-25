@@ -2,6 +2,7 @@ import { useState } from "react";
 import { User } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -66,9 +67,11 @@ export function UserToggle() {
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to change password";
+    } catch (error: unknown) {
+      const errorMessage = isAxiosError(error)
+        ? error.response?.data?.message || "Failed to change password"
+        : "Failed to change password";
+
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
