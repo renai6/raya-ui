@@ -1,14 +1,7 @@
 import Header from "@/components/header/Header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import {
-  ChevronDown,
-  ChevronDownIcon,
-  ChevronUp,
-  Download,
-  Plus,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,14 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import DataTable, { type Column } from "@/components/ui/data-table";
+import DateRangeFilter from "@/components/ui/date-range-filter";
+import SearchInput from "@/components/ui/search-input";
+import SectionCard from "@/components/ui/section-card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -45,13 +34,8 @@ import { useCreateBulkEmployees } from "@/hooks/useCreateBulkEmployees";
 import { Spinner } from "@/components/ui/spinner";
 import { useDeleteEmployee } from "@/hooks/useEmployee";
 import { toast } from "sonner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatCurrency } from "@/lib/utils";
 
 const employeeDefaultValues = {
   employeeNumber: "",
@@ -61,12 +45,50 @@ const employeeDefaultValues = {
   creditLimit: 1500,
 };
 
+const employeeColumns: Column<Employee>[] = [
+  {
+    key: "name",
+    header: "Name",
+    cell: (employee) => employee.name,
+    className: "font-medium",
+  },
+  {
+    key: "employeeNumber",
+    header: "Employee Number",
+    cell: (employee) => employee.employeeNumber,
+    className: "text-muted-foreground tabular-nums",
+  },
+  {
+    key: "contactNumber",
+    header: "Contact",
+    cell: (employee) => employee.contactNumber || "-",
+  },
+  {
+    key: "creditLimit",
+    header: "Credit Limit",
+    align: "right",
+    cell: (employee) => formatCurrency(employee.creditLimit ?? 0),
+  },
+  {
+    key: "totalCredit",
+    header: "Total Credit",
+    align: "right",
+    cell: (employee) => {
+      const totalCredit = employee.totalCredit ?? 0;
+      const isOverLimit = totalCredit > (employee.creditLimit ?? 0);
+      return (
+        <span className={isOverLimit ? "text-destructive font-medium" : ""}>
+          {formatCurrency(totalCredit)}
+        </span>
+      );
+    },
+  },
+];
+
 const Employees = () => {
   const [startDate, setStartDate] = useState<undefined | Date>();
   const [endDate, setEndDate] = useState<undefined | Date>();
 
-  const [isStartCalendarOpen, setIsStartCalendarOpen] = useState(false);
-  const [isEndCalendarOpen, setIsEndCalendarOpen] = useState(false);
   const [isWithCreditOnly, setIsWithCreditOnly] = useState(false);
 
   const user = useAuthUser();
@@ -156,6 +178,11 @@ const Employees = () => {
         return employee.name.toLowerCase().includes(searchTerm.toLowerCase());
       })
     : [];
+
+  const totalOutstandingCredit = filteredEmployees.reduce(
+    (sum: number, employee: Employee) => sum + (employee.totalCredit ?? 0),
+    0,
+  );
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -278,154 +305,59 @@ const Employees = () => {
   return (
     <div>
       <Header title="Employee Management" user={{ email: user?.email }} />
-      <div className="flex justify-between items-end">
-        <div className="flex flex-col gap-3">
-          <Label className="px-1">Select Date</Label>
-          <div className="flex gap-2">
-            <Popover
-              open={isStartCalendarOpen}
-              onOpenChange={setIsStartCalendarOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  id="date"
-                  className="w-48 justify-between font-normal"
-                >
-                  {startDate
-                    ? new Date(startDate).toLocaleDateString()
-                    : "Select date"}
-                  <ChevronDownIcon />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto overflow-hidden p-0"
-                align="start"
-              >
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  captionLayout="dropdown"
-                  onSelect={(date) => {
-                    setStartDate(date || new Date());
-                    setIsStartCalendarOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-            <Popover
-              open={isEndCalendarOpen}
-              onOpenChange={setIsEndCalendarOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  id="date"
-                  className="w-48 justify-between font-normal"
-                >
-                  {endDate ? endDate.toLocaleDateString() : "Select date"}
-                  <ChevronDownIcon />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto overflow-hidden p-0"
-                align="start"
-              >
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  captionLayout="dropdown"
-                  disabled={(date) => (startDate ? date < startDate : false)}
-                  onSelect={(date) => {
-                    console.log(date || new Date());
-                    setEndDate(date || new Date());
-                    setIsEndCalendarOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
 
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEndDate(undefined);
-                setStartDate(undefined);
-              }}
-            >
-              Clear
+      <SectionCard
+        className="mt-4 mb-4"
+        title="Employee List"
+        description={`${filteredEmployees.length} employees, ${formatCurrency(
+          totalOutstandingCredit,
+        )} outstanding credit`}
+        actions={
+          <>
+            <Button variant="default" onClick={openAddEmployee}>
+              <Plus className="w-4" />
+              Create Employee
             </Button>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Checkbox
-            id="prices-check"
-            checked={isWithCreditOnly}
-            onCheckedChange={(e) => setIsWithCreditOnly(e as boolean)}
-          />
-          <Label htmlFor="prices-check">With Credit Only</Label>
-        </div>
-      </div>
-
-      <Card className="border-none mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)]">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <h1 className="mb-2">Employee List</h1>
-              <small className="text-amber-500 text-xs">
-                Shows a table of employees with total credit for this payroll
-              </small>
+            <Button variant="secondary" onClick={handleExport}>
+              <Download className="w-4" />
+              Export
+            </Button>
+          </>
+        }
+        toolbar={
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SearchInput
+              placeholder="Search employees"
+              onChange={setSearchTerm}
+              className="w-full max-w-sm"
+            />
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="with-credit-only"
+                  checked={isWithCreditOnly}
+                  onCheckedChange={(e) => setIsWithCreditOnly(e as boolean)}
+                />
+                <Label htmlFor="with-credit-only">With credit only</Label>
+              </div>
+              <DateRangeFilter
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+              />
             </div>
-
-            <div className="flex gap-2">
-              <Button variant="default" onClick={openAddEmployee}>
-                <Plus className="w-4" />
-                Create Employee
-              </Button>
-              <Button variant="secondary" onClick={handleExport}>
-                <Download className="w-4" />
-                Export
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="Search employees..."
-            className="mb-4"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
-            <Table>
-              <TableHeader className="dark:bg-neutral-800">
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Employee Number</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Credit Limit</TableHead>
-                  <TableHead>Total Credit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees?.map((employee: Employee) => (
-                  <TableRow
-                    key={employee.id}
-                    onClick={() => onEmployeeClick(employee)}
-                    className="cursor-pointer hover:bg-muted"
-                  >
-                    <TableCell className="font-medium">
-                      {employee.name}
-                    </TableCell>
-                    <TableCell>{employee.employeeNumber}</TableCell>
-                    <TableCell>{employee.contactNumber}</TableCell>
-                    <TableCell>{employee.creditLimit}</TableCell>
-                    <TableCell>{employee.totalCredit}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           </div>
-        </CardContent>
-      </Card>
+        }
+      >
+        <DataTable
+          columns={employeeColumns}
+          rows={filteredEmployees}
+          rowKey={(employee) => String(employee.id)}
+          onRowClick={onEmployeeClick}
+          emptyMessage="No employees match these filters."
+        />
+      </SectionCard>
 
       <Dialog
         open={isEmployeeDialogOpen}
@@ -533,9 +465,9 @@ const Employees = () => {
             {selectedEmployee && (
               <div className="p-3 border border-amber-500 rounded-sm my-4">
                 <h3 className="text-amber-400 font-bold">Employee Credit</h3>
-                <small className="text-gray-300">
+                <small className="text-muted-foreground">
                   Please proceed with caution. {form.name} has a total credit of{" "}
-                  {selectedEmployee?.totalCredit || 0}.
+                  {formatCurrency(selectedEmployee?.totalCredit || 0)}.
                 </small>
 
                 <div className="flex justify-end">
@@ -610,8 +542,8 @@ const Employees = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="p-3 border border-red-600 rounded-sm mt-4">
-                    <h3 className="text-red-400 text-bold">Danger Zone</h3>
-                    <small className="text-gray-300">
+                    <h3 className="text-destructive font-bold">Danger Zone</h3>
+                    <small className="text-muted-foreground">
                       Please proceed with caution. Deleting this employee may
                       have serious consequences.
                     </small>

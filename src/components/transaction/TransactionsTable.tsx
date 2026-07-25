@@ -1,24 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Download, MoveRight, Printer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ChevronDownIcon } from "lucide-react";
+import DataTable, { type Column } from "@/components/ui/data-table";
+import DateRangeFilter from "@/components/ui/date-range-filter";
+import SearchInput from "@/components/ui/search-input";
+import SectionCard from "@/components/ui/section-card";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +20,7 @@ import { useState } from "react";
 import { useSalesDated } from "@/hooks/useSalesDated";
 import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
-import { Input } from "../ui/input";
+import { formatCurrency } from "@/lib/utils";
 import { endOfDay, format, startOfDay } from "date-fns";
 
 // toISOString() would report the previous day for any timezone ahead of UTC,
@@ -40,11 +28,37 @@ import { endOfDay, format, startOfDay } from "date-fns";
 const formatDateForFilename = (date: Date | undefined) =>
   date ? format(date, "yyyy-MM-dd") : "all";
 
+type InventoryTransaction = {
+  id: string;
+  createdAt: string;
+  reason: string;
+  oldQuantity: number;
+  newQuantity: number;
+  oldRetailPrice: number;
+  newRetailPrice: number;
+  product: Product;
+};
+
+type SalesTransaction = {
+  id: string;
+  number?: string | number;
+  createdAt: string;
+  total: number;
+  cashReceived: number;
+  employee?: { name: string };
+  sales?: {
+    id: string;
+    quantity: number;
+    total: number;
+    product: Product;
+  }[];
+};
+
 const TransactionsTable = ({
   inventoryTransactions,
   products,
 }: {
-  inventoryTransactions: any;
+  inventoryTransactions: InventoryTransaction[];
   products: {
     count: number;
     products: Product[];
@@ -53,10 +67,8 @@ const TransactionsTable = ({
   const [startDate, setStartDate] = useState<undefined | Date>();
   const [endDate, setEndDate] = useState<undefined | Date>();
 
-  const [isStartCalendarOpen, setIsStartCalendarOpen] = useState(false);
-  const [isEndCalendarOpen, setIsEndCalendarOpen] = useState(false);
-
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<SalesTransaction | null>(null);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
 
   const [productNameSearch, setProductNameSearch] = useState("");
@@ -77,7 +89,7 @@ const TransactionsTable = ({
     );
   };
 
-  const getTransactionType = (transaction: any) => {
+  const getTransactionType = (transaction: InventoryTransaction) => {
     const transactioTypes = [];
 
     if (transaction.oldQuantity !== transaction.newQuantity) {
@@ -91,7 +103,7 @@ const TransactionsTable = ({
     return transactioTypes.join(", ");
   };
 
-  const getQuantityChange = (transaction: any) => {
+  const getQuantityChange = (transaction: InventoryTransaction) => {
     if (transaction.oldQuantity === transaction.newQuantity) {
       return "No Change";
     } else {
@@ -106,7 +118,7 @@ const TransactionsTable = ({
     }
   };
 
-  const getPriceChange = (transaction: any) => {
+  const getPriceChange = (transaction: InventoryTransaction) => {
     if (transaction.reason === "Initial stock") {
       return transaction.newRetailPrice;
     } else if (transaction.oldRetailPrice !== transaction.newRetailPrice) {
@@ -129,7 +141,7 @@ const TransactionsTable = ({
     );
   };
 
-  const handleTransactionClick = (transaction: any) => {
+  const handleTransactionClick = (transaction: SalesTransaction) => {
     setSelectedTransaction(transaction);
     setIsTransactionDialogOpen(true);
   };
@@ -149,7 +161,7 @@ const TransactionsTable = ({
       "Quantity Sold",
       "Total Amount",
     ];
-    const data = sales.map((sale: any) => [
+    const data = sales.map((sale: Sale & { product: Product }) => [
       sale.createdAt,
       sale.product.name,
       sale.product.barcode,
@@ -170,17 +182,154 @@ const TransactionsTable = ({
     toast.success("Sales report exported successfully!");
   };
 
-  const handleExportTransactions = () => {
-    const filteredTransactions =
-      transactions?.filter(
-        (transaction: any) =>
-          (transaction.number || transaction.id)
-            .toString()
-            .toLowerCase()
-            .includes(invoiceSearch.toLowerCase()) &&
-          isWithinDateRange(transaction.createdAt),
-      ) || [];
+  const filteredInventoryTransactions = (inventoryTransactions ?? []).filter(
+    (transaction) =>
+      transaction.product.name
+        .toLowerCase()
+        .includes(productNameSearch.toLowerCase()) &&
+      isWithinDateRange(transaction.createdAt),
+  );
 
+  const filteredSaleProducts = products.products.filter((product: Product) =>
+    product.name.toLowerCase().includes(productNameSearch.toLowerCase()),
+  );
+
+  const filteredTransactions: SalesTransaction[] =
+    transactions?.filter(
+      (transaction: SalesTransaction) =>
+        (transaction.number || transaction.id)
+          .toString()
+          .toLowerCase()
+          .includes(invoiceSearch.toLowerCase()) &&
+        isWithinDateRange(transaction.createdAt),
+    ) || [];
+
+  const transactionsTotal = filteredTransactions.reduce(
+    (sum: number, transaction: SalesTransaction) => sum + (transaction.total ?? 0),
+    0,
+  );
+
+  const dateRangeLabel =
+    startDate || endDate
+      ? ` from ${startDate ? format(startDate, "MMM d, yyyy") : "the start"} to ${
+          endDate ? format(endDate, "MMM d, yyyy") : "today"
+        }`
+      : "";
+
+  const inventoryColumns: Column<InventoryTransaction>[] = [
+    {
+      key: "createdAt",
+      header: "Date",
+      cell: (transaction) =>
+        new Date(transaction.createdAt).toLocaleDateString(),
+      className: "font-medium",
+    },
+    {
+      key: "product",
+      header: "Product",
+      cell: (transaction) => transaction.product.name,
+    },
+    {
+      key: "barcode",
+      header: "Barcode",
+      cell: (transaction) => transaction.product.barcode,
+      className: "text-muted-foreground tabular-nums",
+    },
+    {
+      key: "quantityChange",
+      header: "Quantity Change",
+      cell: (transaction) => getQuantityChange(transaction),
+    },
+    {
+      key: "priceChange",
+      header: "Price Change",
+      cell: (transaction) => getPriceChange(transaction),
+    },
+    {
+      key: "type",
+      header: "Transaction Type",
+      cell: (transaction) => getTransactionType(transaction),
+    },
+    {
+      key: "reason",
+      header: "Remarks",
+      cell: (transaction) => transaction.reason,
+      className: "text-muted-foreground",
+    },
+  ];
+
+  const salesColumns: Column<Product>[] = [
+    {
+      key: "name",
+      header: "Product",
+      cell: (product) => product.name,
+      className: "font-medium",
+    },
+    {
+      key: "barcode",
+      header: "Barcode",
+      cell: (product) => product.barcode,
+      className: "text-muted-foreground tabular-nums",
+    },
+    {
+      key: "retailPrice",
+      header: "Retail Price",
+      align: "right",
+      cell: (product) => formatCurrency(product.retailPrice),
+    },
+    {
+      key: "itemsSold",
+      header: "Items Sold",
+      align: "right",
+      cell: (product) => getTotalItemsSold(product),
+    },
+  ];
+
+  const transactionColumns: Column<SalesTransaction>[] = [
+    {
+      key: "createdAt",
+      header: "Date",
+      cell: (transaction) =>
+        new Date(transaction.createdAt).toLocaleDateString(),
+    },
+    {
+      key: "number",
+      header: "Invoice No.",
+      cell: (transaction) => transaction.number || transaction.id,
+      className: "font-medium tabular-nums",
+    },
+    {
+      key: "paymentType",
+      header: "Payment Type",
+      cell: (transaction) =>
+        transaction.cashReceived === 0 ? "CREDIT" : "CASH",
+    },
+    {
+      key: "total",
+      header: "Total",
+      align: "right",
+      cell: (transaction) => formatCurrency(transaction.total ?? 0),
+    },
+    {
+      key: "cashReceived",
+      header: "Cash Received",
+      align: "right",
+      cell: (transaction) => formatCurrency(transaction.cashReceived ?? 0),
+    },
+    {
+      key: "change",
+      header: "Change",
+      align: "right",
+      cell: (transaction) =>
+        formatCurrency(
+          transaction.cashReceived > 0
+            ? transaction.cashReceived - transaction.total
+            : 0,
+        ),
+    },
+  ];
+
+  const handleExportTransactions = () => {
     const headers = [
       "Date",
       "Invoice No.",
@@ -189,7 +338,7 @@ const TransactionsTable = ({
       "Cash Received",
       "Change",
     ];
-    const data = filteredTransactions.map((transaction: any) => [
+    const data = filteredTransactions.map((transaction) => [
       new Date(transaction.createdAt).toLocaleDateString(),
       transaction.number || transaction.id,
       transaction.cashReceived === 0 ? "CREDIT" : "CASH",
@@ -214,317 +363,121 @@ const TransactionsTable = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <Tabs
-        defaultValue="inventory"
-        onValueChange={(e) => {
-          console.log(e);
-        }}
-      >
-        <div className="flex justify-between items-end">
-          <TabsList>
-            <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          </TabsList>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
-              <Popover
-                open={isStartCalendarOpen}
-                onOpenChange={setIsStartCalendarOpen}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    id="date"
-                    className="w-48 justify-between font-normal"
-                  >
-                    {startDate
-                      ? new Date(startDate).toLocaleDateString()
-                      : "Select date"}
-                    <ChevronDownIcon />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto overflow-hidden p-0"
-                  align="start"
-                >
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    captionLayout="dropdown"
-                    onSelect={(date) => {
-                      setStartDate(date || new Date());
-                      setIsStartCalendarOpen(false);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Popover
-                open={isEndCalendarOpen}
-                onOpenChange={setIsEndCalendarOpen}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    id="date"
-                    className="w-48 justify-between font-normal"
-                  >
-                    {endDate ? endDate.toLocaleDateString() : "Select date"}
-                    <ChevronDownIcon />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto overflow-hidden p-0"
-                  align="start"
-                >
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    captionLayout="dropdown"
-                    disabled={(date) => (startDate ? date < startDate : false)}
-                    onSelect={(date) => {
-                      setEndDate(date || new Date());
-                      setIsEndCalendarOpen(false);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
+      <Tabs defaultValue="inventory" className="gap-4">
+        <TabsList>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="sales">Sales</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+        </TabsList>
 
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setEndDate(undefined);
-                  setStartDate(undefined);
-                }}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-        </div>
         <TabsContent value="inventory">
-          <Card className="mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)] border-none">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <h1 className="mb-2">Inventory Transactions</h1>
-                  <small className="text-amber-500">
-                    A list of your transactions
-                  </small>
-                </div>
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <Input
-                placeholder="Search product name"
-                className="mb-4"
-                value={productNameSearch}
-                onChange={(e) => setProductNameSearch(e.target.value)}
-              />
-              <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
-                <Table>
-                  <TableHeader className="dark:bg-neutral-800">
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Barcode</TableHead>
-                      <TableHead>Quantity Change</TableHead>
-                      <TableHead>Price Change</TableHead>
-                      <TableHead>Transaction Type</TableHead>
-                      <TableHead>Remarks</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inventoryTransactions
-                      .filter(
-                        (transaction: any) =>
-                          transaction.product.name
-                            .toLowerCase()
-                            .includes(productNameSearch.toLowerCase()) &&
-                          isWithinDateRange(transaction.createdAt),
-                      )
-                      .map((transaction: any) => (
-                        <TableRow
-                          className="cursor-pointer hover:bg-muted"
-                          key={transaction.id}
-                        >
-                          <TableCell className="font-medium">
-                            {new Date(
-                              transaction.createdAt,
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>{transaction.product.name}</TableCell>
-                          <TableCell>{transaction.product.barcode}</TableCell>
-                          <TableCell>
-                            {getQuantityChange(transaction)}
-                          </TableCell>
-                          <TableCell>{getPriceChange(transaction)}</TableCell>
-                          <TableCell>
-                            {getTransactionType(transaction)}
-                          </TableCell>
-                          <TableCell>{transaction.reason}</TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
+          <SectionCard
+            title="Inventory Transactions"
+            description={`${filteredInventoryTransactions.length} stock movements${dateRangeLabel}`}
+            toolbar={
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <SearchInput
+                  placeholder="Search product name"
+                  value={productNameSearch}
+                  onChange={setProductNameSearch}
+                  className="w-full max-w-sm"
+                />
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                />
               </div>
-            </CardContent>
-          </Card>
+            }
+          >
+            <DataTable
+              columns={inventoryColumns}
+              rows={filteredInventoryTransactions}
+              rowKey={(transaction) => String(transaction.id)}
+              emptyMessage="No stock movements in this range."
+            />
+          </SectionCard>
         </TabsContent>
+
         <TabsContent value="sales">
-          <Card className="mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)] border-none">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <h1 className="mb-2">Sales</h1>
-                  <small className="text-amber-500">A list of your sales</small>
-                </div>
-                <Button
-                  variant="default"
-                  onClick={handleExportSales}
-                  disabled={!startDate && !endDate}
-                >
-                  <Download className="w-4" />
-                  Export
-                </Button>
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <Input
-                placeholder="Search product name"
-                className="mb-4"
-                value={productNameSearch}
-                onChange={(e) => setProductNameSearch(e.target.value)}
-              />
-              <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
-                <Table>
-                  <TableHeader className="dark:bg-neutral-800">
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Barcode</TableHead>
-                      <TableHead>Retail Price</TableHead>
-                      <TableHead>Items Sold</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.products
-                      .filter((product: Product) =>
-                        product.name
-                          .toLowerCase()
-                          .includes(productNameSearch.toLowerCase()),
-                      )
-                      .map((product: Product) => (
-                        <TableRow
-                          className="cursor-pointer hover:bg-muted"
-                          key={product.id}
-                        >
-                          <TableCell>{product.name}</TableCell>
-                          <TableCell>{product.barcode}</TableCell>
-                          <TableCell>{product.retailPrice}</TableCell>
-                          <TableCell>{getTotalItemsSold(product)}</TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
+          <SectionCard
+            title="Sales"
+            description={`${filteredSaleProducts.length} products${dateRangeLabel}`}
+            actions={
+              <Button
+                variant="default"
+                onClick={handleExportSales}
+                disabled={!startDate && !endDate}
+              >
+                <Download className="w-4" />
+                Export
+              </Button>
+            }
+            toolbar={
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <SearchInput
+                  placeholder="Search product name"
+                  value={productNameSearch}
+                  onChange={setProductNameSearch}
+                  className="w-full max-w-sm"
+                />
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                />
               </div>
-            </CardContent>
-          </Card>
+            }
+          >
+            <DataTable
+              columns={salesColumns}
+              rows={filteredSaleProducts}
+              rowKey={(product) => String(product.id)}
+              emptyMessage="No products match this search."
+            />
+          </SectionCard>
         </TabsContent>
-        <TabsContent value="transactions">
-          <Card className="mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)] border-none">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <h1 className="mb-2">Sales Transactions</h1>
-                  <small className="text-amber-500">
-                    A list of your sales transactions
-                  </small>
-                </div>
-                <Button variant="default" onClick={handleExportTransactions}>
-                  <Download className="w-4" />
-                  Export
-                </Button>
-              </CardTitle>
-            </CardHeader>
 
-            <CardContent>
-              <Input
-                placeholder="Search invoice number"
-                className="mb-4"
-                value={invoiceSearch}
-                onChange={(e) => setInvoiceSearch(e.target.value)}
-              />
-              <div className="max-h-140 overflow-auto pr-2 custom-scrollbar">
-                <Table>
-                  <TableHeader className="dark:bg-neutral-800">
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Invoice No.</TableHead>
-                      <TableHead>Payment Type</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Cash Received</TableHead>
-                      <TableHead>Change</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isTransactionsLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center">
-                          Loading transactions...
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      transactions
-                        ?.filter(
-                          (transaction: any) =>
-                            (transaction.number || transaction.id)
-                              .toString()
-                              .toLowerCase()
-                              .includes(invoiceSearch.toLowerCase()) &&
-                            isWithinDateRange(transaction.createdAt),
-                        )
-                        .map((transaction: any) => (
-                          <TableRow
-                            className="cursor-pointer hover:bg-muted"
-                            key={transaction.id}
-                            onClick={() => handleTransactionClick(transaction)}
-                          >
-                            <TableCell>
-                              {new Date(
-                                transaction.createdAt,
-                              ).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {transaction.number || transaction.id}
-                            </TableCell>
-                            <TableCell>
-                              {transaction.cashReceived === 0
-                                ? "CREDIT"
-                                : "CASH"}
-                            </TableCell>
-                            <TableCell>
-                              {transaction.total?.toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              {transaction.cashReceived?.toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              {transaction.cashReceived > 0
-                                ? (
-                                    transaction.cashReceived - transaction.total
-                                  ).toFixed(2)
-                                : "0.00"}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
+        <TabsContent value="transactions">
+          <SectionCard
+            title="Sales Transactions"
+            description={`${filteredTransactions.length} invoices, ${formatCurrency(
+              transactionsTotal,
+            )}${dateRangeLabel}`}
+            actions={
+              <Button variant="default" onClick={handleExportTransactions}>
+                <Download className="w-4" />
+                Export
+              </Button>
+            }
+            toolbar={
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <SearchInput
+                  placeholder="Search invoice number"
+                  value={invoiceSearch}
+                  onChange={setInvoiceSearch}
+                  className="w-full max-w-sm"
+                />
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                />
               </div>
-            </CardContent>
-          </Card>
+            }
+          >
+            <DataTable
+              columns={transactionColumns}
+              rows={filteredTransactions}
+              rowKey={(transaction) => String(transaction.id)}
+              onRowClick={handleTransactionClick}
+              isLoading={isTransactionsLoading}
+              emptyMessage="No invoices in this range."
+            />
+          </SectionCard>
         </TabsContent>
       </Tabs>
 
@@ -560,7 +513,7 @@ const TransactionsTable = ({
                 <div>
                   <label className="text-sm font-medium">Total Amount</label>
                   <p className="text-sm text-muted-foreground">
-                    ₱{selectedTransaction.total?.toFixed(2)}
+                    {formatCurrency(selectedTransaction.total ?? 0)}
                   </p>
                 </div>
                 {selectedTransaction.cashReceived > 0 && (
@@ -570,17 +523,16 @@ const TransactionsTable = ({
                         Cash Received
                       </label>
                       <p className="text-sm text-muted-foreground">
-                        ₱{selectedTransaction.cashReceived?.toFixed(2)}
+                        {formatCurrency(selectedTransaction.cashReceived ?? 0)}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Change</label>
                       <p className="text-sm text-muted-foreground">
-                        ₱
-                        {(
+                        {formatCurrency(
                           selectedTransaction.cashReceived -
-                          selectedTransaction.total
-                        ).toFixed(2)}
+                            selectedTransaction.total,
+                        )}
                       </p>
                     </div>
                   </>
@@ -598,7 +550,7 @@ const TransactionsTable = ({
               <div>
                 <label className="text-sm font-medium mb-2 block">Items</label>
                 <div className="space-y-2">
-                  {selectedTransaction.sales?.map((item: any) => (
+                  {selectedTransaction.sales?.map((item) => (
                     <div
                       key={item.id}
                       className="flex justify-between items-center p-2 border rounded"
@@ -606,11 +558,11 @@ const TransactionsTable = ({
                       <div>
                         <p className="font-medium">{item.product.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.quantity} pcs @ ₱{item.total.toFixed(2)}
+                          {item.quantity} pcs @ {formatCurrency(item.total)}
                         </p>
                       </div>
                       <p className="font-medium">
-                        ₱{(item.total * item.quantity).toFixed(2)}
+                        {formatCurrency(item.total * item.quantity)}
                       </p>
                     </div>
                   ))}

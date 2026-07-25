@@ -140,7 +140,7 @@ const SalesBarCode = ({
   };
 
   return (
-    <Card className="p-2 gap-0 shadow-[0_8px_10px_rgba(0,0,0,0.3)] border-none">
+    <Card className="p-2 gap-0 shadow-card">
       <CardHeader className="px-2 pt-2">
         <CardTitle className="flex justify-between items-center space-x-1">
           <div className="flex gap-3 items-center">

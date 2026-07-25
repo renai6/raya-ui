@@ -1,18 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import DataTable, { type Column } from "@/components/ui/data-table";
+import SearchInput from "@/components/ui/search-input";
+import SectionCard from "@/components/ui/section-card";
 import * as XLSX from "xlsx";
 import type { Product } from "@/types";
 import { Button } from "../ui/button";
 import { Download, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 type Props = {
   products: Product[];
@@ -21,8 +15,53 @@ type Props = {
   setIsCreateProductsDialogOpen: (open: boolean) => void;
 };
 
+const LOW_STOCK_THRESHOLD = 10;
+
+const columns: Column<Product>[] = [
+  {
+    key: "name",
+    header: "Item",
+    cell: (product) => product.name,
+    className: "font-medium",
+  },
+  {
+    key: "barcode",
+    header: "Barcode",
+    cell: (product) => product.barcode,
+    className: "text-muted-foreground tabular-nums",
+  },
+  {
+    key: "stock",
+    header: "Quantity",
+    align: "right",
+    cell: (product) => (
+      <span
+        className={
+          product.stock === 0
+            ? "text-destructive"
+            : product.stock < LOW_STOCK_THRESHOLD
+              ? "text-primary"
+              : undefined
+        }
+      >
+        {product.stock}
+      </span>
+    ),
+  },
+  {
+    key: "retailPrice",
+    header: "Retail Price",
+    align: "right",
+    cell: (product) => formatCurrency(product.retailPrice),
+  },
+];
+
 const ProductsTable = (props: Props) => {
   const { products, setSearchTerm, onItemClick } = props;
+
+  const lowStockCount = products.filter(
+    (product) => product.stock < LOW_STOCK_THRESHOLD,
+  ).length;
 
   const handleExport = () => {
     const headers = ["Name", "Barcode", "Retail Price", "Stock", "Last Update"];
@@ -41,67 +80,41 @@ const ProductsTable = (props: Props) => {
   };
 
   return (
-    <Card className="mt-3 mb-4 gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.75)] border-none">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <h1 className="mb-2">Product List</h1>
-            <small className="text-amber-500">
-              A list of your recent products
-            </small>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="default"
-              onClick={() => props.setIsCreateProductsDialogOpen(true)}
-            >
-              <Plus className="w-4" />
-              Import Products
-            </Button>
-            <Button variant="secondary" onClick={handleExport}>
-              <Download className="w-4" />
-              Export
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <Input
-          placeholder="Search products..."
-          className="mb-4"
-          onChange={(e) => setSearchTerm(e.target.value)}
+    <SectionCard
+      className="mt-4 mb-4"
+      title="Product List"
+      description={`${products.length} products, ${lowStockCount} low on stock`}
+      actions={
+        <>
+          <Button
+            variant="default"
+            onClick={() => props.setIsCreateProductsDialogOpen(true)}
+          >
+            <Plus className="w-4" />
+            Import Products
+          </Button>
+          <Button variant="secondary" onClick={handleExport}>
+            <Download className="w-4" />
+            Export
+          </Button>
+        </>
+      }
+      toolbar={
+        <SearchInput
+          placeholder="Search products"
+          onChange={setSearchTerm}
+          className="max-w-sm"
         />
-        <div className="max-h-100 overflow-auto pr-2 custom-scrollbar">
-          <Table>
-            <TableHeader className="dark:bg-neutral-800">
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Barcode</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Retail Price</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products?.map((product: Product) => (
-                <TableRow
-                  key={product.id}
-                  onClick={() => onItemClick(product)}
-                  className="cursor-pointer hover:bg-muted"
-                >
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.barcode}</TableCell>
-                  <TableCell className="text-right">{product.stock}</TableCell>
-                  <TableCell className="text-right">
-                    {product.retailPrice.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+      }
+    >
+      <DataTable
+        columns={columns}
+        rows={products}
+        rowKey={(product) => String(product.id)}
+        onRowClick={onItemClick}
+        emptyMessage="No products match this search. Import products to get started."
+      />
+    </SectionCard>
   );
 };
 

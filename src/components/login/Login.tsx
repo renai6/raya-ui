@@ -26,7 +26,7 @@ export function Login({
 }) {
   return (
     <form className="w-full max-w-sm" onSubmit={handleSubmit}>
-      <Card className="w-full max-w-sm shadow-[0_8px_30px_rgba(0,0,0,0.6)] border-none">
+      <Card className="w-full max-w-sm shadow-card">
         <CardHeader>
           <div className="flex items-center justify-start gap-3 mb-6">
             <img

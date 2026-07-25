@@ -20,13 +20,13 @@
     width: 10px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-gray-300 rounded-full;
+    @apply bg-transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 rounded-full;
+    @apply bg-muted-foreground/30 rounded-full;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+    @apply bg-muted-foreground/60;
   }
 
   .no-days .rdp-table {
@@ -40,6 +40,11 @@
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
+  /* Surface used behind sticky table headers - one step off the card. */
+  --table-header: oklch(0.968 0.001 286.375);
+  /* Single elevation token for every card in the app. */
+  --card-shadow:
+    0 1px 2px oklch(0 0 0 / 6%), 0 4px 16px -4px oklch(0 0 0 / 10%);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
   --primary: oklch(0.769 0.188 70.08);
@@ -70,12 +75,15 @@
 }
 
 .dark {
-  --background: oklch(0.35 0 0);
+  /* Surfaces get lighter as they rise: page < card < popover.
+     Previously the card sat below the page, so cards read as holes. */
+  --background: oklch(0.17 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.25 0 0);
-  --dialog: oklch(0.25 0 0);
+  --card: oklch(0.215 0 0);
+  --table-header: oklch(0.255 0 0);
+  --card-shadow: 0 1px 2px oklch(0 0 0 / 40%), 0 8px 24px -6px oklch(0 0 0 / 45%);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
+  --popover: oklch(0.25 0.006 285.885);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.769 0.188 70.08);
   --primary-foreground: oklch(0.274 0.006 286.033);
@@ -114,6 +122,8 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-table-header: var(--table-header);
+  --shadow-card: var(--card-shadow);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -149,9 +159,5 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-
-  .dialog {
-    @apply rounded-xl bg-white p-6 border border-gray-200 shadow-lg;
   }
 }
