@@ -33,6 +33,12 @@ import { useSalesDated } from "@/hooks/useSalesDated";
 import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
 import { Input } from "../ui/input";
+import { endOfDay, format, startOfDay } from "date-fns";
+
+// toISOString() would report the previous day for any timezone ahead of UTC,
+// so the filename has to be built from the local date.
+const formatDateForFilename = (date: Date | undefined) =>
+  date ? format(date, "yyyy-MM-dd") : "all";
 
 const TransactionsTable = ({
   inventoryTransactions,
@@ -59,6 +65,17 @@ const TransactionsTable = ({
   const { data: sales } = useSalesDated(startDate, endDate);
   const { data: transactions, isLoading: isTransactionsLoading } =
     useTransactions();
+
+  // The calendar returns local midnight, so the range has to be widened to
+  // whole days - otherwise picking the same date twice only matches
+  // transactions created at exactly 00:00:00.
+  const isWithinDateRange = (createdAt: string) => {
+    const date = new Date(createdAt);
+    return (
+      (!startDate || date >= startOfDay(startDate)) &&
+      (!endDate || date <= endOfDay(endDate))
+    );
+  };
 
   const getTransactionType = (transaction: any) => {
     const transactioTypes = [];
@@ -146,9 +163,9 @@ const TransactionsTable = ({
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
     XLSX.writeFile(
       workbook,
-      `sales-report-${startDate?.toISOString().split("T")[0]}-${
-        endDate?.toISOString().split("T")[0]
-      }.xlsx`,
+      `sales-report-${formatDateForFilename(startDate)}-${formatDateForFilename(
+        endDate,
+      )}.xlsx`,
     );
     toast.success("Sales report exported successfully!");
   };
@@ -161,8 +178,7 @@ const TransactionsTable = ({
             .toString()
             .toLowerCase()
             .includes(invoiceSearch.toLowerCase()) &&
-          (!startDate || new Date(transaction.createdAt) >= startDate) &&
-          (!endDate || new Date(transaction.createdAt) <= endDate),
+          isWithinDateRange(transaction.createdAt),
       ) || [];
 
     const headers = [
@@ -177,13 +193,11 @@ const TransactionsTable = ({
       new Date(transaction.createdAt).toLocaleDateString(),
       transaction.number || transaction.id,
       transaction.cashReceived === 0 ? "CREDIT" : "CASH",
-      `₱${transaction.total?.toFixed(2)}`,
-      `₱${transaction.cashReceived?.toFixed(2)}`,
-      `₱${
-        transaction.cashReceived > 0
-          ? (transaction.cashReceived - transaction.total).toFixed(2)
-          : "0.00"
-      }`,
+      transaction.total?.toFixed(2),
+      transaction.cashReceived?.toFixed(2),
+      transaction.cashReceived > 0
+        ? (transaction.cashReceived - transaction.total).toFixed(2)
+        : "0.00",
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
@@ -191,9 +205,9 @@ const TransactionsTable = ({
     XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
     XLSX.writeFile(
       workbook,
-      `transactions-report-${
-        startDate ? startDate.toISOString().split("T")[0] : "all"
-      }-${endDate ? endDate.toISOString().split("T")[0] : "all"}.xlsx`,
+      `transactions-report-${formatDateForFilename(
+        startDate,
+      )}-${formatDateForFilename(endDate)}.xlsx`,
     );
     toast.success("Transactions report exported successfully!");
   };
@@ -328,10 +342,7 @@ const TransactionsTable = ({
                           transaction.product.name
                             .toLowerCase()
                             .includes(productNameSearch.toLowerCase()) &&
-                          (!startDate ||
-                            new Date(transaction.createdAt) >= startDate) &&
-                          (!endDate ||
-                            new Date(transaction.createdAt) <= endDate),
+                          isWithinDateRange(transaction.createdAt),
                       )
                       .map((transaction: any) => (
                         <TableRow
@@ -339,7 +350,9 @@ const TransactionsTable = ({
                           key={transaction.id}
                         >
                           <TableCell className="font-medium">
-                            {transaction.createdAt.split("T")[0]}
+                            {new Date(
+                              transaction.createdAt,
+                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>{transaction.product.name}</TableCell>
                           <TableCell>{transaction.product.barcode}</TableCell>
@@ -470,10 +483,7 @@ const TransactionsTable = ({
                               .toString()
                               .toLowerCase()
                               .includes(invoiceSearch.toLowerCase()) &&
-                            (!startDate ||
-                              new Date(transaction.createdAt) >= startDate) &&
-                            (!endDate ||
-                              new Date(transaction.createdAt) <= endDate),
+                            isWithinDateRange(transaction.createdAt),
                         )
                         .map((transaction: any) => (
                           <TableRow
@@ -490,18 +500,17 @@ const TransactionsTable = ({
                               {transaction.number || transaction.id}
                             </TableCell>
                             <TableCell>
-                              ₱{transaction.total?.toFixed(2)}
-                            </TableCell>
-                            <TableCell>
                               {transaction.cashReceived === 0
                                 ? "CREDIT"
                                 : "CASH"}
                             </TableCell>
                             <TableCell>
-                              ₱{transaction.cashReceived?.toFixed(2)}
+                              {transaction.total?.toFixed(2)}
                             </TableCell>
                             <TableCell>
-                              ₱
+                              {transaction.cashReceived?.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
                               {transaction.cashReceived > 0
                                 ? (
                                     transaction.cashReceived - transaction.total
