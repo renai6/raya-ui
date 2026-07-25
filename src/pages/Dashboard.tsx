@@ -8,15 +8,8 @@ import {
 } from "@/components/ui/card";
 import { useTransactionsBySpecificDay } from "@/hooks/useTransactions";
 import { useProductsLowStock, useProductsSaleChart } from "@/hooks/useProducts";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import DataTable, { type Column } from "@/components/ui/data-table";
+import SectionCard from "@/components/ui/section-card";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { Product, Sale } from "@/types";
 import Header from "@/components/header/Header";
@@ -25,6 +18,40 @@ import { COLORS } from "@/lib/contants";
 import { Spinner } from "@/components/ui/spinner";
 import DailyRevenue from "@/components/dashboard/DailyRevenue";
 import MonthlyRevenue from "@/components/dashboard/MonthlyRevenue";
+import { formatCurrency } from "@/lib/utils";
+
+const lowStockColumns: Column<Product>[] = [
+  {
+    key: "name",
+    header: "Item",
+    cell: (product) => product.name,
+    className: "font-medium",
+  },
+  {
+    key: "barcode",
+    header: "Barcode",
+    cell: (product) => product.barcode,
+    className: "text-muted-foreground tabular-nums",
+  },
+  {
+    key: "stock",
+    header: "Quantity",
+    align: "right",
+    cell: (product) => (
+      <span
+        className={product.stock === 0 ? "text-destructive" : "text-primary"}
+      >
+        {product.stock}
+      </span>
+    ),
+  },
+  {
+    key: "retailPrice",
+    header: "Retail Price",
+    align: "right",
+    cell: (product) => formatCurrency(product.retailPrice),
+  },
+];
 
 const Dashboard = () => {
   const { data: transactionsToday, isLoading: isLoadingToday } =
@@ -60,10 +87,10 @@ const Dashboard = () => {
     <div>
       <Header title="Dashboard" user={{ email: user?.email }} />
 
-      <div className="mb-5 flex flex-col gap-6 xl:flex-row xl:justify-between">
+      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <DailyRevenue />
         <MonthlyRevenue />
-        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+        <Card className="shadow-card">
           <CardHeader>
             <CardDescription>Total Customers</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -76,12 +103,12 @@ const Dashboard = () => {
             </div>
           </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+        <Card className="shadow-card">
           <CardHeader>
             <CardDescription>Products low on stock</CardDescription>
             <CardTitle
               className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${
-                lowStockProducts?.length > 0 ? "text-red-400" : "text-green-400"
+                lowStockProducts?.length > 0 ? "text-destructive" : ""
               }`}
             >
               {lowStockProducts?.length || 0}
@@ -89,15 +116,18 @@ const Dashboard = () => {
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="text-muted-foreground">
-              Products with low inventory (less than 10 items)
+              Products with fewer than 10 items in stock
             </div>
           </CardFooter>
         </Card>
       </div>
-      <div className="mb-3 flex flex-col gap-6 xl:flex-row xl:justify-between">
-        <Card className="w-full xl:w-1/2 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+      <div className="mb-3 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Card className="shadow-card">
           <CardHeader>
-            <CardTitle>Fast moving stocks</CardTitle>
+            <CardTitle className="text-base leading-none">
+              Fast moving stocks
+            </CardTitle>
+            <CardDescription>Top 10 by revenue</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -126,64 +156,19 @@ const Dashboard = () => {
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="text-muted-foreground">
-              Top 10 fast moving stocks
-            </div>
-          </CardFooter>
         </Card>
-        <Card className="w-full xl:w-1/2 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
-          <CardHeader>
-            <CardTitle className="flex items-start gap-3 space-x-2 flex-col">
-              <span>Product List</span>
-              <small className="text-amber-500">
-                A list of your recent products which are low in stocks
-              </small>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-100 overflow-auto pr-2 custom-scrollbar">
-              <Table>
-                <TableCaption>
-                  A list of your recent products which are low in stocks
-                </TableCaption>
-                <TableHeader className="dark:bg-neutral-800">
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Barcode</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Retail Price</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lowStockProducts?.map((product: Product) => (
-                    <TableRow
-                      key={product.id}
-                      className="cursor-pointer hover:bg-muted"
-                    >
-                      <TableCell className="font-medium">
-                        {product.name}
-                      </TableCell>
-                      <TableCell>{product.barcode}</TableCell>
-                      <TableCell
-                        className={`${
-                          product.stock === 0
-                            ? "text-red-500"
-                            : "text-amber-500"
-                        } text-right`}
-                      >
-                        {product.stock}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {product.retailPrice.toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <SectionCard
+          title="Low on stock"
+          description={`${lowStockProducts?.length || 0} products below 10 items`}
+        >
+          <DataTable
+            columns={lowStockColumns}
+            rows={lowStockProducts ?? []}
+            rowKey={(product) => String(product.id)}
+            maxHeight="max-h-[22rem]"
+            emptyMessage="Every product is above the low stock threshold."
+          />
+        </SectionCard>
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ const MonthlyRevenue = () => {
 
   if (isLoadingMonth) {
     return (
-      <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+      <Card className="shadow-card">
         <CardHeader>
           <CardDescription className="flex items-center justify-between">
             Monthly Revenue
@@ -73,7 +73,7 @@ const MonthlyRevenue = () => {
 
   const currentDate = new Date();
   return (
-    <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+    <Card className="shadow-card">
       <CardHeader>
         <CardDescription className="flex items-center justify-between">
           Monthly Revenue

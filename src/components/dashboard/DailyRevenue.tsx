@@ -33,7 +33,7 @@ const DailyRevenue = () => {
 
   if (isLoadingToday || isLoadingYesterday) {
     return (
-      <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+      <Card className="shadow-card">
         <CardHeader>
           <CardDescription className="flex items-center justify-between">
             Daily Revenue
@@ -76,8 +76,8 @@ const DailyRevenue = () => {
             Total revenue from invoices for {selectedDate.getMonth() + 1}{" "}
             {selectedDate.getDate()}
           </div>
-          <Badge variant="outline">
-            <IconTrendingUp color="green" />
+          <Badge variant="outline" className="text-muted-foreground">
+            <IconTrendingUp />
             {0}
           </Badge>
         </CardFooter>
@@ -98,7 +98,7 @@ const DailyRevenue = () => {
 
   const isIncrease = percentChange >= 0;
   return (
-    <Card className="w-full xl:w-1/4 shadow-[0_8px_15px_rgba(0,0,0,0.6)] border-none">
+    <Card className="shadow-card">
       <CardHeader>
         <CardDescription className="flex items-center justify-between">
           Daily Revenue
@@ -148,12 +148,15 @@ const DailyRevenue = () => {
             day: "numeric",
           })}
         </div>
-        <Badge variant="outline">
-          {isIncrease ? (
-            <IconTrendingUp color="green" />
-          ) : (
-            <IconTrendingDown color="red" />
-          )}
+        <Badge
+          variant="outline"
+          className={
+            isIncrease
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-destructive"
+          }
+        >
+          {isIncrease ? <IconTrendingUp /> : <IconTrendingDown />}
           {percentChange > 0
             ? `+${percentChange.toFixed(1)}%`
             : `${percentChange.toFixed(1)}%`}
