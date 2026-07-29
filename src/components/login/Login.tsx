@@ -34,7 +34,7 @@ export function Login({
               alt="Raya Logo"
               className="h-15 w-15 object-contain mb-1"
             />
-            <h2 className="font-semibold">Steel Colors and Metal Products</h2>
+            <h2 className="font-semibold">{import.meta.env.VITE_CANTEEN_BRANCH_NAME}</h2>
           </div>
           <CardTitle>Login to your account</CardTitle>
           <CardDescription>
